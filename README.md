@@ -1,4 +1,4 @@
-### CAFE: Towards Compact, Adaptive, and Fast Embedding for Large-scale Recommendation Models
+# [SIGMOD 2024] CAFE: Towards Compact, Adaptive, and Fast Embedding for Large-scale Recommendation Models ([Paper](https://arxiv.org/abs/2312.03256))
 
 Our implementation builds upon DLRM repo: https://github.com/facebookresearch/dlrm
 
@@ -93,3 +93,6 @@ Our implementation builds upon DLRM repo: https://github.com/facebookresearch/dl
      ```
      ./bench/criteo_terabyte.sh "--md-flag --compress-rate=0.1"
      ```
+
+### Citation
+If you find this work useful, please cite [our paper](https://arxiv.org/abs/2312.03256).
