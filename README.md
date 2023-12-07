@@ -1,5 +1,6 @@
 # [SIGMOD 2024] CAFE: Towards Compact, Adaptive, and Fast Embedding for Large-scale Recommendation Models ([Paper](https://arxiv.org/abs/2312.03256))
 
+## Scripts
 Our implementation builds upon DLRM repo: https://github.com/facebookresearch/dlrm
 
 1. The code supports interface with the [Criteo Kaggle Display Advertising Challenge Dataset](https://labs.criteo.com/2014/02/kaggle-display-advertising-challenge-dataset/).
@@ -94,5 +95,27 @@ Our implementation builds upon DLRM repo: https://github.com/facebookresearch/dl
      ./bench/criteo_terabyte.sh "--md-flag --compress-rate=0.1"
      ```
 
-### Citation
+## Guidance for Adjustment of CAFE Parameters
+
+- Default parameters:
+
+  ```
+  ./bench/criteo_terabyte.sh "--sketch-flag --compress-rate=0.001 --hash-rate=0.3 --threshold=300"
+  ```
+
+- To get better experimental results, when cranking up the compression rate, you can crank down the memory footprint of the hash and crank up the threshold, and vice versa. For example, for other compression rates please try the following commands:
+
+  ```
+  ./bench/criteo_terabyte.sh "--sketch-flag --compress-rate=0.1 --hash-rate=0.7 --threshold=30"
+  ```
+
+  ```
+  ./bench/criteo_terabyte.sh "--sketch-flag --compress-rate=0.0001 --hash-rate=0.2 --threshold=500"
+  ```
+
+  
+
+
+
+## Citation
 If you find this work useful, please cite [our paper](https://arxiv.org/abs/2312.03256).
