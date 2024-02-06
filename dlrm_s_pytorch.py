@@ -733,17 +733,13 @@ class DLRM_Net(nn.Module):
     def insert_grad(self, lS_o):
         N = len(lS_o[0])
         for k, input in enumerate(lS_o):
-            # if self.sketch_emb[k] == True:
-            #     self.emb_l[k].insert_grad(input)
-            grad_norm = np.array(torch.norm(self.emb_l[k].weight.grad._values(), dim = 1,  p = 2).cpu())
-            norm = np.sum(grad_norm)
-            if self.g_time + N < 600000000:
-                self.importance[k][self.g_time: self.g_time + N] = grad_norm * N / norm
-        # #print(f"sum = {np.sum(self.grad_norm)}")
-        # np.save("grad_norm.npy", self.grad_norm)
-        # self.grad_norm = np.load("grad_norm.npy")
-        # print(f"sum = {sum(self.grad_norm)}")
-        self.g_time += N
+            if self.sketch_emb[k] == True:
+                self.emb_l[k].insert_grad(input)
+        #     grad_norm = np.array(torch.norm(self.emb_l[k].weight.grad._values(), dim = 1,  p = 2).cpu())
+        #     norm = np.sum(grad_norm)
+        #     if self.g_time + N < 600000000:
+        #         self.importance[k][self.g_time: self.g_time + N] = grad_norm * N / norm
+        # self.g_time += N
 
     #  using quantizing functions from caffe2/aten/src/ATen/native/quantized/cpu
     def quantize_embedding(self, bits):
@@ -1582,9 +1578,6 @@ def run():
 
                     if j < skip_upto_batch:
                         continue
-                    # if (j == 290000):
-                    #     np.save("importance.npy", dlrm.importance)
-                    #     exit(0)
                     X, lS_o, lS_i, T, W, CBPP = unpack_batch(inputBatch)
                     t3 = t1
                     t1 = time_wrap(use_gpu)
@@ -1641,15 +1634,14 @@ def run():
                         #     if grad_num == 26:
                         #         break
 
-                        # if args.sketch_flag:
-                        # dlrm.insert_grad(lS_i)
+                        if args.sketch_flag:
+                            dlrm.insert_grad(lS_i)
                         if args.ada_flag:
                             dlrm.insert_adagrad(lS_i)
                         # optimizer
                         optimizer.step()
                         lr_scheduler.step()
 
-                    t2 = time_wrap(use_gpu)
                     total_time += t1 - t3
 
                     total_loss += L * mbs
