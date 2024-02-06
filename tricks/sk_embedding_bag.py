@@ -76,7 +76,7 @@ class SKEmbeddingBag(nn.Module):
             torch.Tensor(self.hash_size, self.embedding_dim)
         )
 
-        print(f"hash_size: {self.hash_size}")
+        # print(f"hash_size: {self.hash_size}")
         self.reset_parameters()
         self.sparse = sparse
 
@@ -118,7 +118,6 @@ class SKEmbeddingBag(nn.Module):
 
     def forward(self, input, offsets=None, per_sample_weights=None, test=False):
 
-        start_time = time.time()
         dic_mask, dic = self.query(input)
         # if test:
         #     dic_mask, dic = self.query(input)
@@ -128,7 +127,6 @@ class SKEmbeddingBag(nn.Module):
         #     # with torch.no_grad():
         #     #     for x in idx[:, 0]:
         #     #         self.weight_h[dic[x]] = self.weight_hash[input[x] % self.hash_size]
-        start_time = time.time()
         self.query_dic = dic_mask.numpy()
         dic = dic.to(self.device)
         offsets = offsets.to(self.device)
