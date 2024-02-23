@@ -82,7 +82,7 @@ class SKEmbeddingBag(nn.Module):
 
     def insert(self, input):
         N = len(input)
-        input_l = (input + self.offset).numpy()
+        input_l = (input + self.offset).numpy().astype(np.int32)
         addr = input_l.ctypes.data_as(ctypes.POINTER(ctypes.c_int))
         input_c = ctypes.cast(addr, ctypes.POINTER(ctypes.c_int))
 
@@ -100,7 +100,7 @@ class SKEmbeddingBag(nn.Module):
 
     def query(self, input):
         N = len(input)
-        input_l = (input + self.offset).numpy()
+        input_l = (input + self.offset).numpy().astype(np.int32)
         addr = input_l.ctypes.data_as(ctypes.POINTER(ctypes.c_int))
         input_c = ctypes.cast(addr, ctypes.POINTER(ctypes.c_int))
         self.input_c = input_c
@@ -130,7 +130,7 @@ class SKEmbeddingBag(nn.Module):
         self.query_dic = dic_mask.numpy()
         dic = dic.to(self.device)
         offsets = offsets.to(self.device)
-        dic_mask = (dic < 0).unsqueeze(1)
+        dic_mask = dic_mask.to(self.device).unsqueeze(1)
         embed_high = F.embedding_bag(
             dic % self.hot_nums,
             self.weight_h,
