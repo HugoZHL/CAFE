@@ -73,21 +73,6 @@ extern "C" {
             }
             delete[] v;
         }
-        void update() {
-            while(!hot_id.empty()) hot_id.pop();
-            bool *v = new bool[s];
-            memset(v, 0, sizeof(v));
-            for (int key = 0; key < s; ++key) {
-                for (int i = 0; i < 4; ++i) {
-                    if (bucket[key].dic[i])
-                        v[bucket[key].dic[i]] = true;
-                }
-            }
-            for (int i = 1; i < lim; ++i) {
-                if (!v[i]) hot_id.push(i);
-            }
-            delete[] v;
-        }
         void decay() {
             printf("decay: hot_nums: %d, tot: %lf %lld\n", num, tot, 1ll * s * k);
             for (int key = 0; key < s; ++key) {
