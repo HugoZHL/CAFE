@@ -1,4 +1,4 @@
-# [SIGMOD 2024] CAFE: Towards Compact, Adaptive, and Fast Embedding for Large-scale Recommendation Models ([Paper](https://arxiv.org/abs/2312.03256))
+# [SIGMOD 2024] CAFE: Towards Compact, Adaptive, and Fast Embedding for Large-scale Recommendation Models ([Paper](https://dl.acm.org/doi/10.1145/3639306))
 
 ## Scripts
 Our implementation builds upon DLRM repo: https://github.com/facebookresearch/dlrm
@@ -118,4 +118,4 @@ Our implementation builds upon DLRM repo: https://github.com/facebookresearch/dl
 
 
 ## Citation
-If you find this work useful, please cite [our paper](https://arxiv.org/abs/2312.03256).
+If you find this work useful, please cite [our paper](https://dl.acm.org/doi/10.1145/3639306).
