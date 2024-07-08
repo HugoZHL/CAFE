@@ -434,18 +434,19 @@ class DLRM_Net(nn.Module):
             self.hotn = hotn
             self.grad_norm = []
             self.f_offset = np.zeros(self.ln_emb.size, dtype=np.int32)
+            self.importance = np.zeros((26, 39291957))
             if self.sketch_flag:
                 self.weight_high = Parameter(
                     torch.Tensor(hotn, m_spa),
                     requires_grad=True,
                 )
-                self.register_buffer('sketch_buffer', torch.zeros(hotn * 12, dtype = torch.int32, device = 'cpu'))
+                self.register_buffer('sketch_buffer', torch.zeros(hotn * 13, dtype = torch.int32, device = 'cpu'))
                 init = lib.init
-                init.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_void_p]
+                init.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_double]
                 init.restype = None
                 numpy_array = self.sketch_buffer.numpy()
                 data_ptr = numpy_array.ctypes.data_as(ctypes.POINTER(ctypes.c_int))
-                init(hotn, args.sketch_threshold, data_ptr)
+                init(hotn, args.sketch_threshold, args.adjust_threshold, args.sketch_alpha)
 
             self.sketch_emb = np.zeros(self.ln_emb.size)
             # nn.init.uniform_(self.weight_high, np.sqrt(1 / 10000000))
@@ -738,8 +739,22 @@ class DLRM_Net(nn.Module):
         #     grad_norm = np.array(torch.norm(self.emb_l[k].weight.grad._values(), dim = 1,  p = 2).cpu())
         #     norm = np.sum(grad_norm)
         #     if self.g_time + N < 600000000:
-        #         self.importance[k][self.g_time: self.g_time + N] = grad_norm * N / norm
+        #        self.importance[k][self.g_time: self.g_time + N] = grad_norm * N / norm
         # self.g_time += N
+    
+    def save_grad(self, lS_o):
+        N = len(lS_o[0])
+        for k, input in enumerate(lS_o):
+            if self.sketch_emb[k]:
+                grad_norm = np.array(torch.norm(self.emb_l[k].weight_hash.grad._values(), dim = 1,  p = 2).cpu())
+                norm = np.sum(grad_norm)
+                self.importance[k][self.g_time: self.g_time + N] = grad_norm
+            else:
+                grad_norm = np.array(torch.norm(self.emb_l[k].weight.grad._values(), dim = 1,  p = 2).cpu())
+                norm = np.sum(grad_norm)
+                self.importance[k][self.g_time: self.g_time + N] = grad_norm
+
+        self.g_time += N
 
     #  using quantizing functions from caffe2/aten/src/ATen/native/quantized/cpu
     def quantize_embedding(self, bits):
@@ -1109,6 +1124,8 @@ def run():
                         default="../criteo_24days/processed_count.bin")
 
     parser.add_argument("--sketch-threshold", type=int, default=500)
+    parser.add_argument("--adjust-threshold", type=int, default=1)
+    parser.add_argument("--sketch-alpha", type=float, default=1.0)
 
     global args
     global nbatches
@@ -1633,7 +1650,6 @@ def run():
                         #     grad_num += 1
                         #     if grad_num == 26:
                         #         break
-
                         if args.sketch_flag:
                             dlrm.insert_grad(lS_i)
                         if args.ada_flag:
@@ -1695,6 +1711,7 @@ def run():
                         epoch_num_float = (j + 1) / len(train_ld) + k + 1
                         # dlrm.grad_norm = np.load("grad_norm.npy")
                         # print(f"sum = {sum(dlrm.grad_norm)}")
+                        # np.save("cafe_grad_norm.npy", dlrm.importance)
 
                         print(
                             "Testing at - {}/{} of epoch {},".format(

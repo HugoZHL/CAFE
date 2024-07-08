@@ -123,10 +123,10 @@ class SKEmbeddingBag(nn.Module):
         #     dic_mask, dic = self.query(input)
         # else:
         #     mask, dic_mask, dic = self.insert(input) #cold to hot features, cold or hot features, features
-        #     #idx = torch.nonzero(mask)
-        #     # with torch.no_grad():
-        #     #     for x in idx[:, 0]:
-        #     #         self.weight_h[dic[x]] = self.weight_hash[input[x] % self.hash_size]
+            #idx = torch.nonzero(mask)
+            # with torch.no_grad():
+            #     for x in idx[:, 0]:
+            #         self.weight_h[dic[x]] = self.weight_hash[input[x] % self.hash_size]
         self.query_dic = dic_mask.numpy()
         dic = dic.to(self.device)
         offsets = offsets.to(self.device)

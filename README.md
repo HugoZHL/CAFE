@@ -75,7 +75,7 @@ Our implementation builds upon DLRM repo: https://github.com/facebookresearch/dl
    - CAFE with the following script
 
      ```
-     ./bench/criteo_terabyte.sh "--sketch-flag --compress-rate=0.001 --hash-rate=0.3"
+     ./bench/criteo_terabyte.sh "--sketch-flag --compress-rate=0.001 --hash-rate=0.3 --sketch-threshold=1 --adjust-threshold=1 --sketch-alpha=1.0000005"
      ```
 
    - QR embedding with the following script
@@ -100,17 +100,17 @@ Our implementation builds upon DLRM repo: https://github.com/facebookresearch/dl
 - Default parameters:
 
   ```
-  ./bench/criteo_terabyte.sh "--sketch-flag --compress-rate=0.001 --hash-rate=0.3 --threshold=300"
+  ./bench/criteo_terabyte.sh "--sketch-flag --compress-rate=0.001 --hash-rate=0.3 --sketch-threshold=1 --adjust-threshold=1 --sketch-alpha=1.0000005"
   ```
 
 - To get better experimental results, when cranking up the compression rate, you can crank down the memory footprint of the hash and crank up the threshold, and vice versa. For example, for other compression rates please try the following commands:
 
   ```
-  ./bench/criteo_terabyte.sh "--sketch-flag --compress-rate=0.1 --hash-rate=0.7 --threshold=30"
+  ./bench/criteo_terabyte.sh "--sketch-flag --compress-rate=0.1 --hash-rate=0.7 --sketch-threshold=1 --adjust-threshold=1 --sketch-alpha=1.0000005"
   ```
 
   ```
-  ./bench/criteo_terabyte.sh "--sketch-flag --compress-rate=0.0001 --hash-rate=0.2 --threshold=500"
+  ./bench/criteo_terabyte.sh "--sketch-flag --compress-rate=0.0001 --hash-rate=0.2 --sketch-threshold=1 --adjust-threshold=1 --sketch-alpha=1.0000005"
   ```
 
   
