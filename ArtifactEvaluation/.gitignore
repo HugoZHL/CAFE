@@ -1,0 +1,6 @@
+CAFE/
+.hypothesis/
+*.log
+board/
+pngs/
+*.csv

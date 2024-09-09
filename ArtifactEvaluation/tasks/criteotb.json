@@ -1,0 +1,53 @@
+{
+    "base": {
+        "embedding_dim": 128,
+        "dataset": "criteotb",
+        "max_ind_range": 40000000,
+        "learning_rate": 1.0,
+        "mini_batch_size": 2048,
+        "print_freq": 2048,
+        "test_freq": 102400,
+        "data_path": "datasets/criteotb"
+    },
+    "hash": {
+        "compress_method": "hash",
+        "tensor_board_filename": "board/criteotb/hash",
+        "compress_rate": [
+            0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001, 0.0005, 0.0002, 0.0001
+        ]
+    },
+    "qr": {
+        "compress_method": "qr",
+        "tensor_board_filename": "board/criteotb/qr",
+        "compress_rate": [
+            0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001
+        ]
+    },
+    "ada": {
+        "compress_method": "ada",
+        "tensor_board_filename": "board/criteotb/ada",
+        "compress_rate": [
+            0.1, 0.05, 0.02
+        ]
+    },
+    "mde": {
+        "compress_method": "mde",
+        "tensor_board_filename": "board/criteotb/mde",
+        "compress_rate": [
+            0.1, 0.05, 0.02
+        ]
+    },
+    "cafe": {
+        "compress_method": "cafe",
+        "tensor_board_filename": "board/criteotb/cafe",
+        "compress_rate": [
+            0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001, 0.0005, 0.0002, 0.0001
+        ],
+        "cafe_sketch_threshold": [
+            20, 30, 50, 100, 200, 500, 500, 500, 500, 500
+        ],
+        "cafe_hash_rate": [
+            0.5, 0.5, 0.3, 0.3, 0.2, 0.2, 0.2, 0.1, 0.1, 0.1
+        ]
+    }
+}
