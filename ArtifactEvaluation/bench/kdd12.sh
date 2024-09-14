@@ -18,7 +18,6 @@ python $FILE \
 --arch-sparse-feature-size=64 \
 --arch-mlp-bot="13-512-256-64-64" \
 --arch-mlp-top="512-256-1" \
---data-generation=dataset \
 --data-set=kdd12 \
 --loss-function=bce \
 --round-targets=True \
@@ -29,10 +28,7 @@ python $FILE \
 --print-time \
 --test-mini-batch-size=16384 \
 --test-num-workers=16 \
---cat-path="$DIR/../datasets/kdd12/processed_sparse_sep.bin" \
---dense-path="$DIR/../datasets/kdd12/processed_dense.bin" \
---label-path="$DIR/../datasets/kdd12/processed_label.bin" \
---count-path="$DIR/../datasets/kdd12/processed_count.bin" \
+--data_path="$DIR/../datasets/kdd12" \
 $dlrm_extra_option 2>&1
 
 echo "done"

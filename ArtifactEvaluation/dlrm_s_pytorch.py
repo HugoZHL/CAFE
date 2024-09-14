@@ -58,19 +58,12 @@ import argparse
 # miscellaneous
 import builtins
 import datetime
-import json
 import sys
 import time
 import ctypes
 import math
-import profile
 import os
 import os.path as osp
-
-# onnx
-# The onnx import causes deprecation warnings every time workers
-# are spawned during testing. So, we filter out those warnings.
-import warnings
 
 # data generation
 import dlrm_data_pytorch as dp
@@ -84,9 +77,6 @@ import torch
 import torch.nn as nn
 from torch._ops import ops
 from torch.autograd.profiler import record_function
-from torch.nn.parallel.parallel_apply import parallel_apply
-from torch.nn.parallel.replicate import replicate
-from torch.nn.parallel.scatter_gather import gather, scatter
 from torch.nn.parameter import Parameter
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.tensorboard import SummaryWriter
@@ -100,18 +90,6 @@ from tricks.md_embedding_bag import md_solver
 from tricks.sk_embedding_bag import get_sketch_time
 from tricks.sk_embedding_bag import reset_sketch_time
 from tricks.adaembed import adaEmbeddingBag
-
-
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
-    try:
-        import onnx
-    except ImportError as error:
-        print("Unable to import onnx. ", error)
-
-# from torchviz import make_dot
-# import torch.nn.functional as Functional
-# from torch.nn.parameter import Parameter
 
 exc = getattr(builtins, "IOError", "FileNotFoundError")
 
@@ -465,11 +443,6 @@ class DLRM_Net(nn.Module):
             self.bot_l = self.create_mlp(ln_bot, sigmoid_bot)
             self.top_l = self.create_mlp(ln_top, sigmoid_top)
 
-            # quantization
-            self.quantize_emb = False
-            self.emb_l_q = []
-            self.quantize_bits = 32
-
             # specify the loss function
             if self.loss_function == "mse":
                 self.loss_fn = torch.nn.MSELoss(reduction="mean")
@@ -484,59 +457,6 @@ class DLRM_Net(nn.Module):
                 sys.exit(
                     "ERROR: --loss-function=" + self.loss_function + " is not supported"
                 )
-    
-    def _apply(self, fn):
-        for module in self.children():
-            module._apply(fn)
-
-        def compute_should_use_set_data(tensor, tensor_applied):
-            if torch._has_compatible_shallow_copy_type(tensor, tensor_applied):
-                # If the new tensor has compatible tensor type as the existing tensor,
-                # the current behavior is to change the tensor in-place using `.data =`,
-                # and the future behavior is to overwrite the existing tensor. However,
-                # changing the current behavior is a BC-breaking change, and we want it
-                # to happen in future releases. So for now we introduce the
-                # `torch.__future__.get_overwrite_module_params_on_conversion()`
-                # global flag to let the user control whether they want the future
-                # behavior of overwriting the existing tensor or not.
-                return not torch.__future__.get_overwrite_module_params_on_conversion()
-            else:
-                return False
-
-        for key, param in self._parameters.items():
-            if param is None:
-                continue
-            # Tensors stored in modules are graph leaves, and we don't want to
-            # track autograd history of `param_applied`, so we have to use
-            # `with torch.no_grad():`
-            with torch.no_grad():
-                param_applied = fn(param)
-            should_use_set_data = compute_should_use_set_data(param, param_applied)
-            if should_use_set_data:
-                param.data = param_applied
-                out_param = param
-            else:
-                assert isinstance(param, Parameter)
-                assert param.is_leaf
-                out_param = Parameter(param_applied, param.requires_grad)
-                self._parameters[key] = out_param
-
-            if param.grad is not None:
-                with torch.no_grad():
-                    grad_applied = fn(param.grad)
-                should_use_set_data = compute_should_use_set_data(param.grad, grad_applied)
-                if should_use_set_data:
-                    assert out_param.grad is not None
-                    out_param.grad.data = grad_applied
-                else:
-                    assert param.grad.is_leaf
-                    out_param.grad = grad_applied.requires_grad_(param.grad.requires_grad)
-
-        for key, buf in self._buffers.items():
-            if buf is not None and key != "sketch_buffer":
-                self._buffers[key] = fn(buf)
-
-        return self
 
     def _apply(self, fn):
         for module in self.children():
@@ -625,51 +545,26 @@ class DLRM_Net(nn.Module):
             else:
                 per_sample_weights = None
 
-            if self.quantize_emb:
-                s1 = self.emb_l_q[k].element_size() * \
-                    self.emb_l_q[k].nelement()
-                s2 = self.emb_l_q[k].element_size() * \
-                    self.emb_l_q[k].nelement()
-                print("quantized emb sizes:", s1, s2)
-
-                if self.quantize_bits == 4:
-                    QV = ops.quantized.embedding_bag_4bit_rowwise_offsets(
-                        self.emb_l_q[k],
-                        sparse_index_group_batch,
-                        sparse_offset_group_batch,
-                        per_sample_weights=per_sample_weights,
-                    )
-                elif self.quantize_bits == 8:
-                    QV = ops.quantized.embedding_bag_byte_rowwise_offsets(
-                        self.emb_l_q[k],
-                        sparse_index_group_batch,
-                        sparse_offset_group_batch,
-                        per_sample_weights=per_sample_weights,
-                    )
-
-                ly.append(QV)
+            E = emb_l[k]
+            if (self.sketch_emb[k] == True):
+                V = E(
+                    sparse_index_group_batch,
+                    sparse_offset_group_batch,
+                    per_sample_weights=per_sample_weights,
+                    test=test,
+                )
             else:
-                E = emb_l[k]
-                if (self.sketch_emb[k] == True):
-                    V = E(
-                        sparse_index_group_batch,
-                        sparse_offset_group_batch,
-                        per_sample_weights=per_sample_weights,
-                        test=test,
-                    )
-                else:
 
-                    V = E(
-                        sparse_index_group_batch.to(self.device),
-                        sparse_offset_group_batch.to(self.device),
-                        per_sample_weights=per_sample_weights,
-                    )
+                V = E(
+                    sparse_index_group_batch.to(self.device),
+                    sparse_offset_group_batch.to(self.device),
+                    per_sample_weights=per_sample_weights,
+                )
 
-                ly.append(V)
+            ly.append(V)
 
         # print(ly)
         return ly
-    
 
     def ada_decay(self):
         self.grad_norm *= 0.8
@@ -741,26 +636,6 @@ class DLRM_Net(nn.Module):
         #     if self.g_time + N < 600000000:
         #         self.importance[k][self.g_time: self.g_time + N] = grad_norm * N / norm
         # self.g_time += N
-
-    #  using quantizing functions from caffe2/aten/src/ATen/native/quantized/cpu
-    def quantize_embedding(self, bits):
-
-        n = len(self.emb_l)
-        self.emb_l_q = [None] * n
-        for k in range(n):
-            if bits == 4:
-                self.emb_l_q[k] = ops.quantized.embedding_bag_4bit_prepack(
-                    self.emb_l[k].weight
-                )
-            elif bits == 8:
-                self.emb_l_q[k] = ops.quantized.embedding_bag_byte_prepack(
-                    self.emb_l[k].weight
-                )
-            else:
-                return
-        self.emb_l = None
-        self.quantize_emb = True
-        self.quantize_bits = bits
 
     def interact_features(self, x, ly):
         if self.arch_interaction_op == "dot":
@@ -1015,37 +890,10 @@ def run():
     parser.add_argument("--loss-threshold", type=float, default=0.0)  # 1.0e-7
     parser.add_argument("--round-targets", type=bool, default=False)
     # data
-    parser.add_argument("--data-size", type=int, default=1)
-    parser.add_argument("--num-batches", type=int, default=0)
-    parser.add_argument(
-        "--data-generation", type=str, default="dataset"
-    )  # synthetic or dataset
-    parser.add_argument(
-        "--rand-data-dist", type=str, default="uniform"
-    )  # uniform or gaussian
-    parser.add_argument("--rand-data-min", type=float, default=0)
-    parser.add_argument("--rand-data-max", type=float, default=1)
-    parser.add_argument("--rand-data-mu", type=float, default=-1)
-    parser.add_argument("--rand-data-sigma", type=float, default=1)
-    parser.add_argument("--data-trace-file", type=str,
-                        default="./input/dist_emb_j.log")
-    parser.add_argument("--data-set", type=str,
-                        default="kaggle")  # or terabyte
-    parser.add_argument("--raw-data-file", type=str, default="")
-    parser.add_argument("--processed-data-file", type=str,
-                        default="../criteo/kaggle_processed_sparse.bin")
-    parser.add_argument("--data-randomize", type=str,
-                        default="total")  # or day or none
-    parser.add_argument("--data-trace-enable-padding",
-                        type=bool, default=False)
+    parser.add_argument("--data-set", type=str, default="criteo",
+                        choices=['criteo', 'criteotb', 'avazu', 'kdd12'])
     parser.add_argument("--max-ind-range", type=int, default=-1)
-    parser.add_argument("--data-sub-sample-rate",
-                        type=float, default=0.0)  # in [0, 1]
-    parser.add_argument("--num-indices-per-lookup", type=int, default=10)
-    parser.add_argument("--num-indices-per-lookup-fixed",
-                        type=bool, default=False)
     parser.add_argument("--num-workers", type=int, default=8)
-    parser.add_argument("--memory-map", action="store_true", default=False)
     # training
     parser.add_argument("--mini-batch-size", type=int, default=1)
     parser.add_argument("--nepochs", type=int, default=1)
@@ -1054,27 +902,10 @@ def run():
     parser.add_argument("--numpy-rand-seed", type=int, default=123)
     parser.add_argument("--sync-dense-params", type=bool, default=True)
     parser.add_argument("--optimizer", type=str, default="sgd")
-    parser.add_argument(
-        "--dataset-multiprocessing",
-        action="store_true",
-        default=False,
-        help="The Kaggle dataset can be multiprocessed in an environment \
-                        with more than 7 CPU cores and more than 20 GB of memory. \n \
-                        The Terabyte dataset can be multiprocessed in an environment \
-                        with more than 24 CPU cores and at least 1 TB of memory.",
-    )
     # inference
     parser.add_argument("--inference-only", action="store_true", default=False)
-    # quantize
-    parser.add_argument("--quantize-mlp-with-bit", type=int, default=32)
-    parser.add_argument("--quantize-emb-with-bit", type=int, default=32)
-    # onnx
-    parser.add_argument("--save-onnx", action="store_true", default=False)
     # gpu
     parser.add_argument("--use-gpu", action="store_true", default=False)
-    # distributed
-    parser.add_argument("--local_rank", type=int, default=-1)
-    parser.add_argument("--dist-backend", type=str, default="")
     # debugging and profiling
     parser.add_argument("--print-freq", type=int, default=1)
     parser.add_argument("--test-freq", type=int, default=-1)
@@ -1100,14 +931,7 @@ def run():
     parser.add_argument("--notinsert-test", action="store_true", default=False)
     parser.add_argument("--ada-flag", action="store_true", default=False)
 
-    parser.add_argument("--cat-path", type=str,
-                        default="../criteo_24days/sparse")
-    parser.add_argument("--dense-path", type=str,
-                        default="../criteo_24days/dense")
-    parser.add_argument("--label-path", type=str,
-                        default="../criteo_24days/label")
-    parser.add_argument("--count-path", type=str,
-                        default="../criteo_24days/processed_count.bin")
+    parser.add_argument("--data_path", type=str, required=True, help="data dir path")
 
     parser.add_argument("--sketch-threshold", type=int, default=500)
 
@@ -1117,13 +941,6 @@ def run():
     global writer
     args = parser.parse_args()
 
-    if args.dataset_multiprocessing:
-        assert float(sys.version[:3]) > 3.7, (
-            "The dataset_multiprocessing "
-            + "flag is susceptible to a bug in Python 3.7 and under. "
-            + "https://github.com/facebookresearch/dlrm/issues/172"
-        )
-
     if args.weighted_pooling is not None:
         if args.qr_flag:
             sys.exit(
@@ -1131,17 +948,6 @@ def run():
         if args.md_flag:
             sys.exit(
                 "ERROR: mixed dimensions with weighted pooling is not supported")
-    if args.quantize_emb_with_bit in [4, 8]:
-        if args.qr_flag:
-            sys.exit(
-                "ERROR: 4 and 8-bit quantization with quotient remainder is not supported"
-            )
-        if args.md_flag:
-            sys.exit(
-                "ERROR: 4 and 8-bit quantization with mixed dimensions is not supported"
-            )
-        if args.use_gpu:
-            sys.exit("ERROR: 4 and 8-bit quantization on GPU is not supported")
 
     ### some basic setup ###
     np.random.seed(args.numpy_rand_seed)
@@ -1173,45 +979,31 @@ def run():
     ln_bot = np.fromstring(args.arch_mlp_bot, dtype=int, sep="-")
     # input data
 
-    if args.data_generation == "dataset":
-        train_data, train_ld, test_data, test_ld = dp.make_criteo_data_and_loaders(
-            args)
-#        table_feature_map = {idx: idx for idx in range(len(train_data.counts))}
-        nbatches = args.num_batches if args.num_batches > 0 else len(train_ld)
-        nbatches_test = len(test_ld)
-        ln_emb = train_data.counts
-        print(ln_emb)
-        hash_rate = 0
-        # enforce maximum limit on number of vectors per embedding
-        if args.max_ind_range > 0:
-            ln_emb = np.array(
-                list(
-                    map(
-                        lambda x: x if x < args.max_ind_range else args.max_ind_range,
-                        ln_emb,
-                    )
+    train_data, train_ld, test_data, test_ld = dp.make_datasets_and_loaders(
+        args)
+    nbatches = len(train_ld)
+    nbatches_test = len(test_ld)
+    ln_emb = train_data.counts
+    print(ln_emb)
+    hash_rate = 0
+    # enforce maximum limit on number of vectors per embedding
+    if args.max_ind_range > 0:
+        ln_emb = np.array(
+            list(
+                map(
+                    lambda x: x if x < args.max_ind_range else args.max_ind_range,
+                    ln_emb,
                 )
             )
-        else:
-            ln_emb = np.array(ln_emb)
-        if args.data_set == 'kaggle' or args.data_set == 'terabyte':
-            m_den = 13
-            ln_bot[0] = 13
-        if args.data_set == 'avazu' or args.data_set == 'kdd12':
-            m_den = 0
-            ln_bot[0] = 0
-
-    """
-    else:
-        # input and target at random
-        ln_emb = np.fromstring(args.arch_embedding_size, dtype=int, sep="-")
-        m_den = ln_bot[0]
-        train_data, train_ld, test_data, test_ld = dp.make_random_data_and_loader(
-            args, ln_emb, m_den
         )
-        nbatches = args.num_batches if args.num_batches > 0 else len(train_ld)
-        nbatches_test = len(test_ld)
-    """
+    else:
+        ln_emb = np.array(ln_emb)
+    if args.data_set == 'criteo' or args.data_set == 'criteotb':
+        m_den = 13
+        ln_bot[0] = 13
+    if args.data_set == 'avazu' or args.data_set == 'kdd12':
+        m_den = 0
+        ln_bot[0] = 0
 
     args.ln_emb = ln_emb.tolist()
 
@@ -1526,33 +1318,6 @@ def run():
         print("Testing state: accuracy = {:3.3f} %".format(
             ld_acc_test * 100))
 
-    if args.inference_only:
-        # Currently only dynamic quantization with INT8 and FP16 weights are
-        # supported for MLPs and INT4 and INT8 weights for EmbeddingBag
-        # post-training quantization during the inference.
-        # By default we don't do the quantization: quantize_{mlp,emb}_with_bit == 32 (FP32)
-        assert args.quantize_mlp_with_bit in [
-            8,
-            16,
-            32,
-        ], "only support 8/16/32-bit but got {}".format(args.quantize_mlp_with_bit)
-        assert args.quantize_emb_with_bit in [
-            4,
-            8,
-            32,
-        ], "only support 4/8/32-bit but got {}".format(args.quantize_emb_with_bit)
-        if args.quantize_mlp_with_bit != 32:
-            if args.quantize_mlp_with_bit in [8]:
-                quantize_dtype = torch.qint8
-            else:
-                quantize_dtype = torch.float16
-            dlrm = torch.quantization.quantize_dynamic(
-                dlrm, {torch.nn.Linear}, quantize_dtype
-            )
-        if args.quantize_emb_with_bit != 32:
-            dlrm.quantize_embedding(args.quantize_emb_with_bit)
-            # print(dlrm)
-
     print("time/loss/accuracy (if enabled):")
 
     tb_file = "./" + args.tensor_board_filename
@@ -1574,9 +1339,6 @@ def run():
                 t2 = 0
                 t3 = 0
                 for j, inputBatch in enumerate(train_ld):
-                    if j == 0 and args.save_onnx:
-                        X_onnx, lS_o_onnx, lS_i_onnx, _, _, _ = unpack_batch(
-                            inputBatch)
 
                     if j < skip_upto_batch:
                         continue
@@ -1655,7 +1417,6 @@ def run():
                     ) or (j <= 100)
                     should_test = (
                         (args.test_freq > 0)
-                        and (args.data_generation in ["dataset", "random"])
                         and (((j + 1) % args.test_freq == 0) or (j + 1 == nbatches))
                     )
 
@@ -1779,85 +1540,6 @@ def run():
         for param in dlrm.parameters():
             print(param.detach().cpu().numpy())
 
-    # export the model in onnx
-    if args.save_onnx:
-        """
-        # workaround 1: tensor -> list
-        if torch.is_tensor(lS_i_onnx):
-            lS_i_onnx = [lS_i_onnx[j] for j in range(len(lS_i_onnx))]
-        # workaound 2: list -> tensor
-        lS_i_onnx = torch.stack(lS_i_onnx)
-        """
-        # debug prints
-        # print("inputs", X_onnx, lS_o_onnx, lS_i_onnx)
-        # print("output", dlrm_wrap(X_onnx, lS_o_onnx, lS_i_onnx, use_gpu, device))
-        dlrm_pytorch_onnx_file = "dlrm_s_pytorch.onnx"
-        batch_size = X_onnx.shape[0]
-        print("X_onnx.shape", X_onnx.shape)
-        if torch.is_tensor(lS_o_onnx):
-            print("lS_o_onnx.shape", lS_o_onnx.shape)
-        else:
-            for oo in lS_o_onnx:
-                print("oo.shape", oo.shape)
-        if torch.is_tensor(lS_i_onnx):
-            print("lS_i_onnx.shape", lS_i_onnx.shape)
-        else:
-            for ii in lS_i_onnx:
-                print("ii.shape", ii.shape)
-
-        # name inputs and outputs
-        o_inputs = (
-            ["offsets"]
-            if torch.is_tensor(lS_o_onnx)
-            else ["offsets_" + str(i) for i in range(len(lS_o_onnx))]
-        )
-        i_inputs = (
-            ["indices"]
-            if torch.is_tensor(lS_i_onnx)
-            else ["indices_" + str(i) for i in range(len(lS_i_onnx))]
-        )
-        all_inputs = ["dense_x"] + o_inputs + i_inputs
-        # debug prints
-        print("inputs", all_inputs)
-
-        # create dynamic_axis dictionaries
-        do_inputs = (
-            [{"offsets": {1: "batch_size"}}]
-            if torch.is_tensor(lS_o_onnx)
-            else [
-                {"offsets_" + str(i): {0: "batch_size"}} for i in range(len(lS_o_onnx))
-            ]
-        )
-        di_inputs = (
-            [{"indices": {1: "batch_size"}}]
-            if torch.is_tensor(lS_i_onnx)
-            else [
-                {"indices_" + str(i): {0: "batch_size"}} for i in range(len(lS_i_onnx))
-            ]
-        )
-        dynamic_axes = {"dense_x": {0: "batch_size"},
-                        "pred": {0: "batch_size"}}
-        for do in do_inputs:
-            dynamic_axes.update(do)
-        for di in di_inputs:
-            dynamic_axes.update(di)
-        # debug prints
-        print(dynamic_axes)
-        # export model
-        torch.onnx.export(
-            dlrm,
-            (X_onnx, lS_o_onnx, lS_i_onnx),
-            dlrm_pytorch_onnx_file,
-            verbose=True,
-            opset_version=11,
-            input_names=all_inputs,
-            output_names=["pred"],
-            dynamic_axes=dynamic_axes,
-        )
-        # recover the model back
-        dlrm_pytorch_onnx = onnx.load("dlrm_s_pytorch.onnx")
-        # check the onnx model
-        onnx.checker.check_model(dlrm_pytorch_onnx)
     total_time_end = time_wrap(use_gpu)
 
 

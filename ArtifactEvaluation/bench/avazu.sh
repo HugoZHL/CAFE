@@ -20,7 +20,6 @@ python $FILE \
 --arch-sparse-feature-size=16 \
 --arch-mlp-bot="13-512-256-64-16" \
 --arch-mlp-top="512-256-1" \
---data-generation=dataset \
 --data-set=avazu \
 --loss-function=bce \
 --round-targets=True \
@@ -31,10 +30,7 @@ python $FILE \
 --print-time \
 --test-mini-batch-size=16384 \
 --test-num-workers=16 \
---cat-path="$DIR/../datasets/avazu/processed_sparse_sep.bin" \
---dense-path="$DIR/../datasets/avazu/processed_dense.bin" \
---label-path="$DIR/../datasets/avazu/processed_label.bin" \
---count-path="$DIR/../datasets/avazu/processed_count.bin" \
+--data_path="$DIR/../datasets/avazu" \
 $dlrm_extra_option 2>&1
 
 echo "done"

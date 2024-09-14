@@ -23,8 +23,7 @@ python $FILE \
 --arch-mlp-bot="13-512-256-128" \
 --arch-mlp-top="1024-1024-512-256-1" \
 --max-ind-range=40000000 \
---data-generation=dataset \
---data-set=terabyte \
+--data-set=criteotb \
 --loss-function=bce \
 --round-targets=True \
 --learning-rate=1.0 \
@@ -34,6 +33,9 @@ python $FILE \
 --test-freq=102400 \
 --test-mini-batch-size=16384 \
 --test-num-workers=16 \
+--compress-rate=0.001 \
+--hash-flag \
+--data_path="/home/zhl/criteo_24days" \
 $dlrm_extra_option 2>&1
 
 echo "done"

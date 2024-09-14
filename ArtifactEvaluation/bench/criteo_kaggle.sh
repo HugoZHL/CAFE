@@ -22,8 +22,7 @@ python $FILE \
 --arch-sparse-feature-size=16 \
 --arch-mlp-bot="13-512-256-64-16" \
 --arch-mlp-top="512-256-1" \
---data-generation=dataset \
---data-set=kaggle \
+--data-set=criteo \
 --loss-function=bce \
 --round-targets=True \
 --learning-rate=0.1 \
@@ -33,11 +32,7 @@ python $FILE \
 --test-mini-batch-size=16384 \
 --test-freq=30000 \
 --test-num-workers=16 \
+--data_path="$DIR/../datasets/criteo" \
 $dlrm_extra_option 2>&1
 
 echo "done"
-
-# --cat-path="../criteo_kaggle/kaggle_processed_sparse_sep.bin" \
-# --dense-path="../criteo_kaggle/kaggle_processed_dense.bin" \
-# --label-path="../criteo_kaggle/kaggle_processed_label.bin" \
-# --count-path="../criteo_kaggle/kaggle_processed_count.bin" \
