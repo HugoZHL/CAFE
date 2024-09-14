@@ -10,17 +10,15 @@ else
 fi
 #echo $dlrm_extra_option
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-FILE="$DIR/../dlrm_s_pytorch.py"
+FILE="$DIR/../main.py"
 
 CUDA_VISIBLE_DEVICES=0 \
 python $FILE \
 --use-gpu \
---arch-sparse-feature-size=64 \
+--embedding_dim=64 \
 --arch-mlp-bot="13-512-256-64-64" \
 --arch-mlp-top="512-256-1" \
 --data-set=kdd12 \
---loss-function=bce \
---round-targets=True \
 --learning-rate=0.1 \
 --mini-batch-size=128 \
 --print-freq=1024 \

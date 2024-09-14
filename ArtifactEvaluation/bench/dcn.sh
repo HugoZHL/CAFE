@@ -10,13 +10,13 @@ else
 fi
 #echo $dlrm_extra_optionf
 
-python ../dcn.py \
+CUDA_VISIBLE_DEVICES=0 \
+python ../main.py \
+--model dcn \
 --use-gpu \
---arch-sparse-feature-size=128 \
+--embedding_dim=128 \
 --max-ind-range=40000000 \
 --data-set=criteotb \
---loss-function=bce \
---round-targets=True \
 --learning-rate=0.1 \
 --mini-batch-size=2048 \
 --print-freq=2048 \
