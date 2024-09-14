@@ -18,18 +18,17 @@ FILE="$DIR/../main.py"
 
 CUDA_VISIBLE_DEVICES=0 \
 python $FILE \
---use-gpu \
+--use_gpu \
 --embedding_dim=16 \
---arch-mlp-bot="13-512-256-64-16" \
---arch-mlp-top="512-256-1" \
---data-set=criteo \
---learning-rate=0.1 \
---mini-batch-size=128 \
---print-freq=1024 \
---print-time \
---test-mini-batch-size=16384 \
---test-freq=30000 \
---test-num-workers=16 \
+--arch_mlp_bot="13-512-256-64-16" \
+--arch_mlp_top="512-256-1" \
+--dataset=criteo \
+--learning_rate=0.1 \
+--mini_batch_size=128 \
+--print_freq=1024 \
+--print_time \
+--test_mini_batch_size=16384 \
+--test_freq=30000 \
 --data_path="$DIR/../datasets/criteo" \
 $dlrm_extra_option 2>&1
 

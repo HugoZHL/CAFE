@@ -18,12 +18,12 @@ for thres in sketch_threshold:
     cr = compress_rate[0]
 
     ops = ("../../bench/criteo_kaggle.sh" + 
-            " \"--compress-rate=" + str(1.0 / cr) + 
+            " \"--compress_rate=" + str(1.0 / cr) + 
             " --" + md + "-flag")
     
-    ops += (" --sketch-threshold=" + str(thres) + 
-            " --hash-rate=0.2" + 
-            " --notinsert-test")
+    ops += (" --sketch_threshold=" + str(thres) + 
+            " --hash_rate=0.2" + 
+            " --notinsert_test")
 
-    ops += " --tensor-board-filename=\"../board/sensitivity/threshold" + str(thres) + "\"\""
+    ops += " --tensor_board_filename=\"../board/sensitivity/threshold" + str(thres) + "\"\""
     os.system(ops)

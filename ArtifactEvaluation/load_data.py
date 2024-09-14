@@ -338,7 +338,7 @@ def make_datasets_and_loaders(args):
         'criteotb': CriteoTBDataSet,
         'avazu': AvazuDataset,
         'kdd12': KDD12Dataset,
-    }[args.data_set]
+    }[args.dataset]
 
     train_data = dataset_cls(
         args.data_path,

@@ -18,12 +18,12 @@ for decay in sketch_decay:
     cr = compress_rate[0]
 
     ops = ("../../bench/criteo_kaggle.sh" + 
-            " \"--compress-rate=" + str(1.0 / cr) + 
+            " \"--compress_rate=" + str(1.0 / cr) + 
             " --" + md + "-flag")
-    ops += (" --sketch-threshold=500" + 
-            " --hash-rate=0.2" + 
-            " --notinsert-test" + 
+    ops += (" --sketch_threshold=500" + 
+            " --hash_rate=0.2" + 
+            " --notinsert_test" + 
             " --sketch-decay=" + str(decay))
 
-    ops += " --tensor-board-filename=\"../board/sensitivity/decay" + str(decay) + "\"\""
+    ops += " --tensor_board_filename=\"../board/sensitivity/decay" + str(decay) + "\"\""
     os.system(ops)

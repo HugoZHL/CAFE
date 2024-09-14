@@ -18,21 +18,20 @@ FILE="$DIR/../main.py"
 
 CUDA_VISIBLE_DEVICES=0 \
 python $FILE \
---use-gpu \
+--use_gpu \
 --embedding_dim=128 \
---arch-mlp-bot="13-512-256-128" \
---arch-mlp-top="1024-1024-512-256-1" \
---max-ind-range=40000000 \
---data-set=criteotb \
---learning-rate=1.0 \
---mini-batch-size=2048 \
---print-freq=2048 \
---print-time \
---test-freq=102400 \
---test-mini-batch-size=16384 \
---test-num-workers=16 \
---compress-rate=0.001 \
---hash-flag \
+--arch_mlp_bot="13-512-256-128" \
+--arch_mlp_top="1024-1024-512-256-1" \
+--max_ind_range=40000000 \
+--dataset=criteotb \
+--learning_rate=1.0 \
+--mini_batch_size=2048 \
+--print_freq=2048 \
+--print_time \
+--test_freq=102400 \
+--test_mini_batch_size=16384 \
+--compress_rate=0.001 \
+--hash_flag \
 --data_path="/home/zhl/criteo_24days" \
 $dlrm_extra_option 2>&1
 

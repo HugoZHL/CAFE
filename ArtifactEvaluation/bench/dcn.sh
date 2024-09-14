@@ -13,18 +13,17 @@ fi
 CUDA_VISIBLE_DEVICES=0 \
 python ../main.py \
 --model dcn \
---use-gpu \
+--use_gpu \
 --embedding_dim=128 \
---max-ind-range=40000000 \
---data-set=criteotb \
---learning-rate=0.1 \
---mini-batch-size=2048 \
---print-freq=2048 \
---print-time \
---test-freq=102400 \
---test-mini-batch-size=16384 \
+--max_ind_range=40000000 \
+--dataset=criteotb \
+--learning_rate=0.1 \
+--mini_batch_size=2048 \
+--print_freq=2048 \
+--print_time \
+--test_freq=102400 \
+--test_mini_batch_size=16384 \
 --data_path="/home/zhl/criteo_24days" \
---test-num-workers=16 \
 $dlrm_extra_option 2>&1 | tee dcn.log
 
 echo "done"

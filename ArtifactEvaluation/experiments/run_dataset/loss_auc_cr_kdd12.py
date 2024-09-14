@@ -16,14 +16,14 @@ for i in range(5):
         cr = compress_rate[c]
 
         ops = ("../../bench/kdd12.sh" + 
-                " \"--compress-rate=" + str(1.0 / cr) + 
+                " \"--compress_rate=" + str(1.0 / cr) + 
                 " --" + md + "-flag")
         if i == 1:
-            ops += (" --sketch-threshold=" + str(sketch_threshold[c]) + 
-                   " --hash-rate=" + str(sketch_rate[c]) + 
-                   " --notinsert-test")
+            ops += (" --sketch_threshold=" + str(sketch_threshold[c]) + 
+                   " --hash_rate=" + str(sketch_rate[c]) + 
+                   " --notinsert_test")
 
-        ops += " --tensor-board-filename=\"../board/kdd12/" + str(md) + str(cr) + "\"\""
+        ops += " --tensor_board_filename=\"../board/kdd12/" + str(md) + str(cr) + "\"\""
         print(f"command: {ops}")
         os.system(ops)
 

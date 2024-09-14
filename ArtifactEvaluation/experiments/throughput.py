@@ -18,14 +18,14 @@ for i in range(5):
         cr = compress_rate[c]
 
         ops = ("./bench/criteo_kaggle.sh" + 
-                " \"--compress-rate=" + str(1.0 / cr) + 
+                " \"--compress_rate=" + str(1.0 / cr) + 
                 " --" + md + "-flag" + 
                 " --test-throughput")
         if i == 1:
-            ops += (" --sketch-threshold=" + str(sketch_threshold[c]) + 
-                   " --hash-rate=" + str(sketch_rate) + 
-                   " --notinsert-test")
+            ops += (" --sketch_threshold=" + str(sketch_threshold[c]) + 
+                   " --hash_rate=" + str(sketch_rate) + 
+                   " --notinsert_test")
 
-        ops += " --tensor-board-filename=\"board/criteo/" + str(method) + str(cr) + "\"\""
+        ops += " --tensor_board_filename=\"board/criteo/" + str(method) + str(cr) + "\"\""
         os.system(ops)
 

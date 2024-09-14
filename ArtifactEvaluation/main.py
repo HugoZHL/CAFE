@@ -200,65 +200,62 @@ def run():
     # model related parameters
     parser.add_argument("--embedding_dim", type=int, required=True)
     parser.add_argument(
-        "--arch-mlp-bot", type=dash_separated_ints, default="4-3-2")
+        "--arch_mlp_bot", type=dash_separated_ints, default="4-3-2")
     parser.add_argument(
-        "--arch-mlp-top", type=dash_separated_ints, default="4-2-1")
+        "--arch_mlp_top", type=dash_separated_ints, default="4-2-1")
     # embedding table options
-    parser.add_argument("--md-flag", action="store_true", default=False)
-    parser.add_argument("--md-threshold", type=int, default=200)
-    parser.add_argument("--md-temperature", type=float, default=0.3)
-    parser.add_argument("--md-round-dims", action="store_true", default=False)
-    parser.add_argument("--qr-flag", action="store_true", default=False)
-    parser.add_argument("--qr-threshold", type=int, default=200)
-    parser.add_argument("--qr-operation", type=str, default="mult")
-    parser.add_argument("--qr-collisions", type=int, default=10)
-    parser.add_argument("--lr-flag", action="store_true", default=False)
-    parser.add_argument("--hash-flag", action="store_true", default=False)
-    parser.add_argument("--bucket-flag", action="store_true", default=False)
-    parser.add_argument("--sketch-flag", action="store_true", default=False)
-    parser.add_argument("--compress-rate", type=float, default=0.001)
-    parser.add_argument("--hc-threshold", type=int, default=200)
-    parser.add_argument("--hash-rate", type=float, default=0.5)
+    parser.add_argument("--md_flag", action="store_true", default=False)
+    parser.add_argument("--md_threshold", type=int, default=200)
+    parser.add_argument("--md_temperature", type=float, default=0.3)
+    parser.add_argument("--md_round_dims", action="store_true", default=False)
+    parser.add_argument("--qr_flag", action="store_true", default=False)
+    parser.add_argument("--qr_threshold", type=int, default=200)
+    parser.add_argument("--qr_operation", type=str, default="mult")
+    parser.add_argument("--qr_collisions", type=int, default=10)
+    parser.add_argument("--lr_flag", action="store_true", default=False)
+    parser.add_argument("--hash_flag", action="store_true", default=False)
+    parser.add_argument("--bucket_flag", action="store_true", default=False)
+    parser.add_argument("--sketch_flag", action="store_true", default=False)
+    parser.add_argument("--compress_rate", type=float, default=0.001)
+    parser.add_argument("--hc_threshold", type=int, default=200)
+    parser.add_argument("--hash_rate", type=float, default=0.5)
 
     # data
-    parser.add_argument("--data-set", type=str, default="criteo",
+    parser.add_argument("--dataset", type=str, default="criteo",
                         choices=['criteo', 'criteotb', 'avazu', 'kdd12'])
-    parser.add_argument("--max-ind-range", type=int, default=-1)
-    parser.add_argument("--num-workers", type=int, default=8)
+    parser.add_argument("--max_ind_range", type=int, default=-1)
+    parser.add_argument("--num_workers", type=int, default=8)
     # training
-    parser.add_argument("--mini-batch-size", type=int, default=1)
+    parser.add_argument("--mini_batch_size", type=int, default=1)
     parser.add_argument("--nepochs", type=int, default=1)
-    parser.add_argument("--learning-rate", type=float, default=0.01)
-    parser.add_argument("--print-precision", type=int, default=5)
-    parser.add_argument("--numpy-rand-seed", type=int, default=123)
-    parser.add_argument("--sync-dense-params", type=bool, default=True)
+    parser.add_argument("--learning_rate", type=float, default=0.01)
+    parser.add_argument("--print_precision", type=int, default=5)
+    parser.add_argument("--numpy_rand_seed", type=int, default=123)
     parser.add_argument("--optimizer", type=str, default="sgd")
     # inference
-    parser.add_argument("--inference-only", action="store_true", default=False)
+    parser.add_argument("--inference_only", action="store_true", default=False)
     # gpu
-    parser.add_argument("--use-gpu", action="store_true", default=False)
+    parser.add_argument("--use_gpu", action="store_true", default=False)
     # debugging and profiling
-    parser.add_argument("--print-freq", type=int, default=1)
-    parser.add_argument("--test-freq", type=int, default=-1)
-    parser.add_argument("--test-mini-batch-size", type=int, default=-1)
-    parser.add_argument("--test-num-workers", type=int, default=-1)
-    parser.add_argument("--print-time", action="store_true", default=False)
-    parser.add_argument("--print-wall-time",
+    parser.add_argument("--print_freq", type=int, default=1)
+    parser.add_argument("--test_freq", type=int, default=-1)
+    parser.add_argument("--test_mini_batch_size", type=int, default=-1)
+    parser.add_argument("--test_num_workers", type=int, default=16)
+    parser.add_argument("--print_time", action="store_true", default=False)
+    parser.add_argument("--print_wall_time",
                         action="store_true", default=False)
-    parser.add_argument("--enable-profiling",
-                        action="store_true", default=False)
-    parser.add_argument("--tensor-board-filename",
+    parser.add_argument("--tensor_board_filename",
                         type=str, default="run_kaggle_pt")
     # store/load model
-    parser.add_argument("--save-model", type=str, default="")
-    parser.add_argument("--load-model", type=str, default="")
+    parser.add_argument("--save_model", type=str, default="")
+    parser.add_argument("--load_model", type=str, default="")
 
-    parser.add_argument("--notinsert-test", action="store_true", default=False)
-    parser.add_argument("--ada-flag", action="store_true", default=False)
+    parser.add_argument("--notinsert_test", action="store_true", default=False)
+    parser.add_argument("--ada_flag", action="store_true", default=False)
 
     parser.add_argument("--data_path", type=str, required=True, help="data dir path")
 
-    parser.add_argument("--sketch-threshold", type=int, default=500)
+    parser.add_argument("--sketch_threshold", type=int, default=500)
 
     args = parser.parse_args()
 
@@ -271,9 +268,6 @@ def run():
     if args.test_mini_batch_size < 0:
         # if the parameter is not set, use the training batch size
         args.test_mini_batch_size = args.mini_batch_size
-    if args.test_num_workers < 0:
-        # if the parameter is not set, use the same parameter for training
-        args.test_num_workers = args.num_workers
 
     use_gpu = args.use_gpu and torch.cuda.is_available()
     print(f"availble: {torch.cuda.is_available()}")
@@ -328,7 +322,7 @@ def run():
     ln_top = np.fromstring(arch_mlp_top_adjusted, dtype=int, sep="-")
 
     if args.model == 'dlrm':
-        if args.qr_flag and args.data_set != 'avazu' and args.data_set != 'kdd12':
+        if args.qr_flag and args.dataset != 'avazu' and args.dataset != 'kdd12':
             if args.qr_operation == "concat" and 2 * embedding_dim != m_den_out:
                 sys.exit(
                     "ERROR: 2 embedding_dim "
@@ -345,7 +339,7 @@ def run():
                     + str(m_den_out)
                 )
         else:
-            if embedding_dim != m_den_out and args.data_set != 'avazu' and args.data_set != 'kdd12':
+            if embedding_dim != m_den_out and args.dataset != 'avazu' and args.dataset != 'kdd12':
                 sys.exit(
                     "ERROR: embedding_dim "
                     + str(embedding_dim)
@@ -412,8 +406,6 @@ def run():
         embedding_nums,
         ln_bot,
         ln_top,
-        sigmoid_bot=-1,
-        sigmoid_top=ln_top.size - 2,
         qr_flag=args.qr_flag,
         qr_operation=args.qr_operation,
         qr_collisions=args.qr_collisions,
@@ -510,211 +502,193 @@ def run():
     tb_file = "./" + args.tensor_board_filename
     writer = SummaryWriter(tb_file)
 
-    with torch.autograd.profiler.profile(
-        args.enable_profiling, use_cuda=use_gpu, record_shapes=True
-    ) as prof:
-        if not args.inference_only:
-            k = 0
-            total_time_begin = 0
-            while k < args.nepochs:
+    if not args.inference_only:
+        k = 0
+        total_time_begin = 0
+        while k < args.nepochs:
 
-                if k < skip_upto_epoch:
+            if k < skip_upto_epoch:
+                continue
+
+            num = 0
+            t1 = 0
+            t2 = 0
+            t3 = 0
+            for j, inputBatch in enumerate(train_ld):
+
+                if j < skip_upto_batch:
                     continue
+                X, lS_o, lS_i, T, W, CBPP = unpack_batch(inputBatch)
+                t3 = t1
+                t1 = time_wrap(use_gpu)
 
-                num = 0
-                t1 = 0
-                t2 = 0
-                t3 = 0
-                for j, inputBatch in enumerate(train_ld):
+                # early exit if nbatches was set by the user and has been exceeded
+                if nbatches > 0 and j >= nbatches:
+                    break
 
-                    if j < skip_upto_batch:
-                        continue
-                    X, lS_o, lS_i, T, W, CBPP = unpack_batch(inputBatch)
-                    t3 = t1
-                    t1 = time_wrap(use_gpu)
+                # = args.mini_batch_size except maybe for last
+                mbs = T.shape[0]
 
-                    # early exit if nbatches was set by the user and has been exceeded
-                    if nbatches > 0 and j >= nbatches:
-                        break
-
-                    # = args.mini_batch_size except maybe for last
-                    mbs = T.shape[0]
-
-                    # forward pass
-                    Z = dlrm_wrap(
-                        dlrm,
-                        X,
-                        lS_o,
-                        lS_i,
-                        use_gpu,
-                        device,
-                        test=False,
-                        sk_flag=args.sketch_flag,
-                    )
-
-                    # loss
-                    with record_function("DLRM loss compute"):
-                        E = dlrm.loss_fn(Z, T.to(device))
-
-                    # compute loss and accuracy
-                    L = E.detach().cpu().numpy()  # numpy array
-                    # training accuracy is not disabled
-                    # S = Z.detach().cpu().numpy()  # numpy array
-                    # T = T.detach().cpu().numpy()  # numpy array
-
-                    # # print("res: ", S)
-
-                    # # print("j, train: BCE ", j, L)
-
-                    # mbs = T.shape[0]  # = args.mini_batch_size except maybe for last
-                    # A = np.sum((np.round(S, 0) == T).astype(np.uint8))
-
-                    with record_function("DLRM backward"):
-                        # scaled error gradient propagation
-                        # (where we do not accumulate gradients across mini-batches)
-                        optimizer.zero_grad()
-                        # backward pass
-                        E.backward()
-                        # grad_num = 0
-                        # grad_offset = 0
-                        # for name, parms in dlrm.named_parameters():
-                        #     print('-->name:', name)
-                        #     print('-->para:', torch.max(parms), torch.min(parms))
-                        #     #print('-->grad_requirs:',parms.requires_grad)
-                        #     print('-->grad_value:', parms.grad.shape, parms.grad, parms.grad.indices)
-                        #     grad_num += 1
-                        #     if grad_num == 26:
-                        #         break
-
-                        if args.sketch_flag:
-                            dlrm.insert_grad(lS_i)
-                        if args.ada_flag:
-                            dlrm.insert_adagrad(lS_i)
-                        # optimizer
-                        optimizer.step()
-
-                    total_time += t1 - t3
-
-                    total_loss += L * mbs
-                    total_iter += 1
-                    total_samp += mbs
-
-                    should_print = ((j + 1) % args.print_freq == 0) or (
-                        j + 1 == nbatches
-                    ) or (j <= 100)
-                    should_test = (
-                        (args.test_freq > 0)
-                        and (((j + 1) % args.test_freq == 0) or (j + 1 == nbatches))
-                    )
-
-                    # print time, loss and accuracy
-                    if should_print or should_test:
-                        gT = 1000.0 * total_time / total_iter if args.print_time else -1
-                        total_time = 0
-
-                        train_loss = total_loss / total_samp
-                        total_loss = 0
-
-                        str_run_type = (
-                            "inference" if args.inference_only else "training"
-                        )
-
-                        wall_time = ""
-                        if args.print_wall_time:
-                            wall_time = " ({})".format(time.strftime("%H:%M"))
-
-                        print(
-                            "Finished {} it {}/{} of epoch {}, {:.2f} ms/it,".format(
-                                str_run_type, j + 1, nbatches, k, gT,
-                            )
-                            + " loss {:.6f}".format(train_loss)
-                            + wall_time,
-                            flush=True,
-                        )
-
-                        log_iter = nbatches * k + j + 1
-                        writer.add_scalar("Train/Loss", train_loss, log_iter)
-
-                        total_iter = 0
-                        total_samp = 0
-                        reset_sketch_time()
-
-                    # testing
-
-                    if should_test:
-                        epoch_num_float = (j + 1) / len(train_ld) + k + 1
-                        # dlrm.grad_norm = np.load("grad_norm.npy")
-                        # print(f"sum = {sum(dlrm.grad_norm)}")
-
-                        print(
-                            "Testing at - {}/{} of epoch {},".format(
-                                j + 1, nbatches, k)
-                        )
-                        model_metrics_dict, is_best = inference(
-                            args,
-                            dlrm,
-                            best_acc_test,
-                            best_auc_test,
-                            test_ld,
-                            device,
-                            use_gpu,
-                            nbatches,
-                            nbatches_test,
-                            writer,
-                            log_iter,
-                            args.notinsert_test,
-                            args.sketch_flag,
-                        )
-
-                        if (
-                            is_best
-                            and not (args.save_model == "")
-                            and not args.inference_only
-                        ):
-                            model_metrics_dict["epoch"] = k
-                            model_metrics_dict["iter"] = j + 1
-                            model_metrics_dict["train_loss"] = train_loss
-                            model_metrics_dict["total_loss"] = total_loss
-                            model_metrics_dict[
-                                "opt_state_dict"
-                            ] = optimizer.state_dict()
-                            print("Saving model to {}".format(args.save_model))
-                            torch.save(model_metrics_dict, args.save_model)
-
-                        # Uncomment the line below to print out the total time with overhead
-                        # print("Total test time for this group: {}" \
-                        # .format(time_wrap(use_gpu) - accum_test_time_begin))
-
-                k += 1  # nepochs
-        else:
-            print("Testing for inference only")
-            inference(
-                args,
-                dlrm,
-                best_acc_test,
-                best_auc_test,
-                test_ld,
-                device,
-                use_gpu,
-                nbatches,
-                nbatches_test,
-                writer,
-            )
-
-    # profiling
-    if args.enable_profiling:
-        time_stamp = str(datetime.datetime.now()).replace(" ", "_")
-        with open("dlrm_s_pytorch" + time_stamp + "_shape.prof", "w") as prof_f:
-            prof_f.write(
-                prof.key_averages(group_by_input_shape=True).table(
-                    sort_by="self_cpu_time_total"
+                # forward pass
+                Z = dlrm_wrap(
+                    dlrm,
+                    X,
+                    lS_o,
+                    lS_i,
+                    use_gpu,
+                    device,
+                    test=False,
+                    sk_flag=args.sketch_flag,
                 )
-            )
-        with open("dlrm_s_pytorch" + time_stamp + "_total.prof", "w") as prof_f:
-            prof_f.write(prof.key_averages().table(
-                sort_by="self_cpu_time_total"))
-        prof.export_chrome_trace("dlrm_s_pytorch" + time_stamp + ".json")
-        # print(prof.key_averages().table(sort_by="cpu_time_total"))
+
+                # loss
+                with record_function("DLRM loss compute"):
+                    E = dlrm.loss_fn(Z, T.to(device))
+
+                # compute loss and accuracy
+                L = E.detach().cpu().numpy()  # numpy array
+                # training accuracy is not disabled
+                # S = Z.detach().cpu().numpy()  # numpy array
+                # T = T.detach().cpu().numpy()  # numpy array
+
+                # # print("res: ", S)
+
+                # # print("j, train: BCE ", j, L)
+
+                # mbs = T.shape[0]  # = args.mini_batch_size except maybe for last
+                # A = np.sum((np.round(S, 0) == T).astype(np.uint8))
+
+                with record_function("DLRM backward"):
+                    # scaled error gradient propagation
+                    # (where we do not accumulate gradients across mini-batches)
+                    optimizer.zero_grad()
+                    # backward pass
+                    E.backward()
+                    # grad_num = 0
+                    # grad_offset = 0
+                    # for name, parms in dlrm.named_parameters():
+                    #     print('-->name:', name)
+                    #     print('-->para:', torch.max(parms), torch.min(parms))
+                    #     #print('-->grad_requirs:',parms.requires_grad)
+                    #     print('-->grad_value:', parms.grad.shape, parms.grad, parms.grad.indices)
+                    #     grad_num += 1
+                    #     if grad_num == 26:
+                    #         break
+
+                    if args.sketch_flag:
+                        dlrm.insert_grad(lS_i)
+                    if args.ada_flag:
+                        dlrm.insert_adagrad(lS_i)
+                    # optimizer
+                    optimizer.step()
+
+                total_time += t1 - t3
+
+                total_loss += L * mbs
+                total_iter += 1
+                total_samp += mbs
+
+                should_print = ((j + 1) % args.print_freq == 0) or (
+                    j + 1 == nbatches
+                ) or (j <= 100)
+                should_test = (
+                    (args.test_freq > 0)
+                    and (((j + 1) % args.test_freq == 0) or (j + 1 == nbatches))
+                )
+
+                # print time, loss and accuracy
+                if should_print or should_test:
+                    gT = 1000.0 * total_time / total_iter if args.print_time else -1
+                    total_time = 0
+
+                    train_loss = total_loss / total_samp
+                    total_loss = 0
+
+                    str_run_type = (
+                        "inference" if args.inference_only else "training"
+                    )
+
+                    wall_time = ""
+                    if args.print_wall_time:
+                        wall_time = " ({})".format(time.strftime("%H:%M"))
+
+                    print(
+                        "Finished {} it {}/{} of epoch {}, {:.2f} ms/it,".format(
+                            str_run_type, j + 1, nbatches, k, gT,
+                        )
+                        + " loss {:.6f}".format(train_loss)
+                        + wall_time,
+                        flush=True,
+                    )
+
+                    log_iter = nbatches * k + j + 1
+                    writer.add_scalar("Train/Loss", train_loss, log_iter)
+
+                    total_iter = 0
+                    total_samp = 0
+                    reset_sketch_time()
+
+                # testing
+
+                if should_test:
+                    epoch_num_float = (j + 1) / len(train_ld) + k + 1
+                    # dlrm.grad_norm = np.load("grad_norm.npy")
+                    # print(f"sum = {sum(dlrm.grad_norm)}")
+
+                    print(
+                        "Testing at - {}/{} of epoch {},".format(
+                            j + 1, nbatches, k)
+                    )
+                    model_metrics_dict, is_best = inference(
+                        args,
+                        dlrm,
+                        best_acc_test,
+                        best_auc_test,
+                        test_ld,
+                        device,
+                        use_gpu,
+                        nbatches,
+                        nbatches_test,
+                        writer,
+                        log_iter,
+                        args.notinsert_test,
+                        args.sketch_flag,
+                    )
+
+                    if (
+                        is_best
+                        and not (args.save_model == "")
+                        and not args.inference_only
+                    ):
+                        model_metrics_dict["epoch"] = k
+                        model_metrics_dict["iter"] = j + 1
+                        model_metrics_dict["train_loss"] = train_loss
+                        model_metrics_dict["total_loss"] = total_loss
+                        model_metrics_dict[
+                            "opt_state_dict"
+                        ] = optimizer.state_dict()
+                        print("Saving model to {}".format(args.save_model))
+                        torch.save(model_metrics_dict, args.save_model)
+
+                    # Uncomment the line below to print out the total time with overhead
+                    # print("Total test time for this group: {}" \
+                    # .format(time_wrap(use_gpu) - accum_test_time_begin))
+
+            k += 1  # nepochs
+    else:
+        print("Testing for inference only")
+        inference(
+            args,
+            dlrm,
+            best_acc_test,
+            best_auc_test,
+            test_ld,
+            device,
+            use_gpu,
+            nbatches,
+            nbatches_test,
+            writer,
+        )
 
     total_time_end = time_wrap(use_gpu)
 
