@@ -1,6 +1,5 @@
 {
     "base": {
-        "use_gpu": true,
         "embedding_dim": 16,
         "dataset": "criteo",
         "learning_rate": 0.1,

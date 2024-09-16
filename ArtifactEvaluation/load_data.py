@@ -1,5 +1,4 @@
 import numpy as np
-import math
 import os.path as osp
 import torch
 from bisect import bisect_right
@@ -279,7 +278,6 @@ def collate_wrapper(list_of_tuples):
 
 
 def make_datasets_and_loaders(args):
-    hot_features = None
 
     dataset_cls = {
         'criteo': CriteoDataset,

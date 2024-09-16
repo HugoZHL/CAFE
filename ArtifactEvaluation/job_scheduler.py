@@ -27,7 +27,7 @@ def run_task(task, gpu_id):
     with open(log_file, 'w') as log:
         command = ["python", osp.join(cur_dir, 'main.py')]
         for k, v in task.items():
-            command += [k, v]
+            command += [f'--{k}', str(v)]
         result = subprocess.run(command, stdout=log, stderr=log, text=True, env=env)
 
     print(f"Task {task_name} on GPU {gpu_id} finished with return code {result.returncode}")
@@ -85,7 +85,7 @@ def schedule(config_file):
                     task = tasks.pop(0)
                     future = executor.submit(run_task, task, gpu_id)
                     gpu_to_task[future] = gpu_id
-            sleep(60) 
+            sleep(60)
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

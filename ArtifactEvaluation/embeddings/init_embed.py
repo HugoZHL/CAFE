@@ -91,7 +91,8 @@ class EmbeddingLayer(nn.Module):
             cafe_hash_rate = args.cafe_hash_rate
             cafe_sketch_threshold = args.cafe_sketch_threshold
             cur_dir = osp.join(osp.split(osp.abspath(__file__))[0])
-            os.system(f"g++ -fPIC -shared -o {cur_dir}/sklib.so -g -rdynamic -mavx2 -mbmi -mavx512bw -mavx512dq --std=c++17 -O3 -fopenmp {cur_dir}/sketch.cpp")
+            if not osp.exists(f'{cur_dir}/sklib.so'):
+                os.system(f"g++ -fPIC -shared -o {cur_dir}/sklib.so -g -rdynamic -mavx2 -mbmi -mavx512bw -mavx512dq --std=c++17 -O3 -fopenmp {cur_dir}/sketch.cpp")
             lib = ctypes.CDLL(f'{cur_dir}/sklib.so')
             self.lib = lib
 

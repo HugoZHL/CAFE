@@ -14,7 +14,7 @@ Our experiments were conducted in the following hardware environment:
 For portability, we have the following hardware requirement:
 - GPU: 1 card per experiment, with over 16GB memory due to the embedding table size.
 - CPU: no requirement, since our tasks are not CPU-intensive.
-- Memory: nearly no requirement for training (e.g. 8GB should suffice), since we're using `memmap` for dataloading; however, for data processing, we need 31GB for Avazu, 56 GB for KDD12, 69GB for Criteo, and around 200-300GB for CriteoTB.
+- Memory: nearly no requirement for training (e.g. 8GB should suffice), since we're using `memmap` for dataloading; however, for data processing, we need 31GB for Avazu, 56 GB for KDD12, 69GB for Criteo, and several hundreds GB for CriteoTB (if CPU OOM issue occurs and interrupts the processing, please re-init the data processing script and skip the processed days manually).
 - Disk space: 60GB for the 3 smaller dataset, around 1TB for the CriteoTB dataset.
 
 ### Software
@@ -22,11 +22,18 @@ Our experiments were conducted in the following software environment:
 - System: Linux Ubuntu 16.04.
 - Python packages: use conda environment, see `environment.yml`.
 - C++: use g++ version 9.4.0, openmp version 4.5, and C++17 for compilation.
+- CUDA: 11.2 .
 
-For portability, we have the following suggestions:
+To configure the environment, please follow these instructions:
 - System: any system that supports conda and g++ is acceptable, including Linux, macOS, and Windows. However, we suggest using Linux, since other systems require some modifications to the conda environment.
-- Python packages: please first download and install Anaconda or Miniconda from the website https://www.anaconda.com/, then use the command `conda create --name cafe --file environment.yml` to create a new conda environment for experiments.
-- C++: please ensure the following command is runnable: `g++ -fPIC -shared -o tricks/sklib.so --std=c++17 -O3 -fopenmp tricks/sketch.cpp`.
+- Python packages: please first download and install Anaconda or Miniconda from the website https://www.anaconda.com/, then use the following command to create a new conda environment named `cafe` for experiments.
+```bash
+conda env create -f environment.yml
+```
+- C++: please use the following command to compile C++ codes for CAFE: 
+```bash
+g++ -fPIC -shared -o embeddings/sklib.so --std=c++17 -O3 -fopenmp embeddings/sketch.cpp
+```
 
 
 ## Code Structure
