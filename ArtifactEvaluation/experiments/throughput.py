@@ -6,7 +6,7 @@ method = ["ada", "sketch", "qr", "md", "hash"]
 
 compress_rate = [10]
 sketch_rate = [0.5]
-sketch_threshold = [10]
+cafe_sketch_threshold = [10]
 
 method_cr = [1,1,1,1,1]
 
@@ -22,8 +22,8 @@ for i in range(5):
                 " --" + md + "-flag" + 
                 " --test-throughput")
         if i == 1:
-            ops += (" --sketch_threshold=" + str(sketch_threshold[c]) + 
-                   " --hash_rate=" + str(sketch_rate) + 
+            ops += (" --cafe_sketch_threshold=" + str(cafe_sketch_threshold[c]) + 
+                   " --cafe_hash_rate=" + str(sketch_rate) + 
                    " --notinsert_test")
 
         ops += " --tensor_board_filename=\"board/criteo/" + str(method) + str(cr) + "\"\""

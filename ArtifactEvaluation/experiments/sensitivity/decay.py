@@ -20,8 +20,8 @@ for decay in sketch_decay:
     ops = ("../../bench/criteo_kaggle.sh" + 
             " \"--compress_rate=" + str(1.0 / cr) + 
             " --" + md + "-flag")
-    ops += (" --sketch_threshold=500" + 
-            " --hash_rate=0.2" + 
+    ops += (" --cafe_sketch_threshold=500" + 
+            " --cafe_hash_rate=0.2" + 
             " --notinsert_test" + 
             " --sketch-decay=" + str(decay))
 

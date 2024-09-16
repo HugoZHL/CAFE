@@ -18,8 +18,8 @@ for rate in sketch_rate:
     ops = ("../../bench/criteo_kaggle.sh" + 
             " \"--compress_rate=" + str(1.0 / cr) + 
             " --" + md + "-flag")
-    ops += (" --sketch_threshold=500" + 
-            " --hash_rate=" + str(rate) + 
+    ops += (" --cafe_sketch_threshold=500" + 
+            " --cafe_hash_rate=" + str(rate) + 
             " --notinsert_test")
 
     ops += " --tensor_board_filename=\"../board/sensitivity/hotrate" + str(rate) + "\"\""

@@ -6,14 +6,14 @@ import os.path as osp
 method = ["sketch"]
 compress_rate = [1000]
 sketch_rate = [0.7, 0.5, 0.5, 0.5, 0.3, 0.3, 0.2, 0.2, 0.2, 0.1, 0.1, 0.1]
-sketch_threshold = [100, 300, 500, 700, 900]
+cafe_sketch_threshold = [100, 300, 500, 700, 900]
 
-auc_csv = pd.DataFrame(index = sketch_threshold, columns=['auc'])
+auc_csv = pd.DataFrame(index = cafe_sketch_threshold, columns=['auc'])
 
 for i in range(5):
     md = method[0]
     cr = compress_rate[0]
-    log_file = osp.join("./board", "sensitivity",  "threshold" + str(sketch_threshold[i]))
+    log_file = osp.join("./board", "sensitivity",  "threshold" + str(cafe_sketch_threshold[i]))
 
     ea = event_accumulator.EventAccumulator(log_file)
     ea.Reload()

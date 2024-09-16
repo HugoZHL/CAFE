@@ -1,33 +1,17 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import numpy as np
-from numpy import random as ra
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.parameter import Parameter
 import ctypes
-import time
-
-
-sketch_time = 0
-
-
-def get_sketch_time():
-    global sketch_time
-    return sketch_time
-
-
-def reset_sketch_time():
-    global sketch_time
-    sketch_time = 0
 
 
 class SKEmbeddingBag(nn.Module):
-
     def __init__(
         self,
-        field_num,
+        field_idx,
         hotn,
         lib,
         weight_high,
@@ -36,14 +20,9 @@ class SKEmbeddingBag(nn.Module):
         embedding_dim,
         f_offset,
         hash_size,
-        max_norm=None,
-        norm_type=2.0,
-        scale_grad_by_freq=False,
-        sparse=False,
     ):
         super(SKEmbeddingBag, self).__init__()
-        # self.weight_high = weight_high
-        self.field_num = field_num
+        self.field_idx = field_idx
         self.lib = lib
         self.offset = f_offset
         self.hash_size = hash_size
@@ -53,9 +32,6 @@ class SKEmbeddingBag(nn.Module):
         self.num_categories = num_categories
         self.weight_h = weight_high
         self.embedding_dim = embedding_dim
-        self.max_norm = max_norm
-        self.norm_type = norm_type
-        self.scale_grad_by_freq = scale_grad_by_freq
         self.device = device
         self.grad_norm = 0
         self.ins = self.lib.batch_insert
@@ -76,9 +52,7 @@ class SKEmbeddingBag(nn.Module):
             torch.Tensor(self.hash_size, self.embedding_dim)
         )
 
-        # print(f"hash_size: {self.hash_size}")
         self.reset_parameters()
-        self.sparse = sparse
 
     def insert(self, input):
         N = len(input)
@@ -116,17 +90,8 @@ class SKEmbeddingBag(nn.Module):
         nn.init.uniform_(self.weight_hash, -np.sqrt(1 /
                          self.num_categories), np.sqrt(1 / self.num_categories))
 
-    def forward(self, input, offsets=None, per_sample_weights=None, test=False):
-
+    def forward(self, input, offsets=None):
         dic_mask, dic = self.query(input)
-        # if test:
-        #     dic_mask, dic = self.query(input)
-        # else:
-        #     mask, dic_mask, dic = self.insert(input) #cold to hot features, cold or hot features, features
-        #     #idx = torch.nonzero(mask)
-        #     # with torch.no_grad():
-        #     #     for x in idx[:, 0]:
-        #     #         self.weight_h[dic[x]] = self.weight_hash[input[x] % self.hash_size]
         self.query_dic = dic_mask.numpy()
         dic = dic.to(self.device)
         offsets = offsets.to(self.device)
@@ -173,18 +138,13 @@ class SKEmbeddingBag(nn.Module):
     def insert_grad(self, input):
 
         N = len(input)
-        l = self.field_num * N
+        l = self.field_idx * N
         r = l + N
         grad_norm = torch.where(
             torch.from_numpy(self.query_dic).to(self.device),
             torch.norm(self.weight_h.grad._values()[l: r], dim=1, p=2),
             torch.norm(self.weight_hash.grad._values(), dim=1, p=2),
         )
-
-        # if self.grad_norm == 0:
-        #     self.grad_norm = torch.sum(grad_norm)
-        # else:
-        #     self.grad_norm = self.grad_norm * 0.8 + torch.sum(grad_norm) * 0.2
 
         grad_norm = grad_norm * N / torch.sum(grad_norm)
         grad_norm_np = grad_norm.cpu().numpy()
@@ -206,14 +166,3 @@ class SKEmbeddingBag(nn.Module):
             for x in idx[:, 0]:
                 self.weight_h[dic[x]] = self.weight_hash[input[x] %
                                                          self.hash_size]
-
-    def extra_repr(self):
-        s = "{num_embeddings}, {embedding_dim}"
-        if self.max_norm is not None:
-            s += ", max_norm={max_norm}"
-        if self.norm_type != 2:
-            s += ", norm_type={norm_type}"
-        if self.scale_grad_by_freq is not False:
-            s += ", scale_grad_by_freq={scale_grad_by_freq}"
-        s += ", mode={mode}"
-        return s.format(**self.__dict__)

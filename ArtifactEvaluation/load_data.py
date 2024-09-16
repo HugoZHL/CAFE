@@ -9,41 +9,15 @@ class CTRDataset:
     def __init__(
         self,
         data_path,
-        compress_rate,
         phase,
-        hash_flag,
-        bucket_flag,
-        hot_features=None,
-        hash_rate=0.5,
         max_ind_range=-1,
     ):
-        self.compress_rate = compress_rate
-        self.hash_flag = hash_flag
-        self.bucket_flag = bucket_flag
-        self.hot_features = hot_features
-        self.hash_rate = hash_rate
         self.sparse = self.read_sparse(data_path)
         self.dense = self.read_dense(data_path)
         self.label = self.read_label(data_path)
         self.counts = self.read_count(data_path)
         self.index = None
         self.get_split(phase)
-
-        if self.hash_flag:
-            hash_size = np.zeros(self.num_sparse, dtype=np.int32)
-            for i in range(self.num_sparse):
-                if self.counts[i] > 2000 * self.compress_rate:
-                    self.counts[i] = int(
-                        math.ceil(self.counts[i] * self.compress_rate))
-                hash_size[i] = self.counts[i]
-            self.hash_size = hash_size
-        if self.bucket_flag:
-            for i in range(self.num_sparse):
-                if self.counts[i] > 2000 * self.compress_rate:
-                    self.hash_size[i] = int(
-                        round(self.counts[i] * self.compress_rate * self.hash_rate + 0.55))
-                    self.counts[i] = int(
-                        self.hash_size[i] + len(self.hot_features[i]))
 
     @property
     def num_sparse(self):
@@ -104,16 +78,6 @@ class CTRDataset:
         if self.index is not None:
             index = self.index[index]
         data_c = np.array(self.sparse[index])
-        if self.hash_flag or self.bucket_flag:
-            for i in range(self.num_sparse):
-                if self.hash_flag and self.hash_size[i] != 0:
-                    data_c[i] = data_c[i] % self.hash_size[i]
-                elif self.bucket_flag and self.hash_size[i] != 0:
-                    if data_c[i] not in self.hot_features[i]:
-                        data_c[i] = len(self.hot_features[i]) + \
-                            data_c[i] % self.hash_size[i]
-                    else:
-                        data_c[i] = self.hot_features[i][data_c[i]]
         dense_result = self.dense[index] if self.dense is not None else None
         return (data_c, dense_result, self.label[index])
 
@@ -150,29 +114,15 @@ class CriteoTBDataSet(CTRDataset):
     def __init__(
         self,
         data_path,
-        compress_rate,
         phase,
-        hash_flag,
-        bucket_flag,
-        hot_features=None,
-        hash_rate=0.5,
         max_ind_range=-1,
     ):
-        self.compress_rate = compress_rate
-        self.hash_flag = hash_flag
-        self.hash_rate = hash_rate
         self.max_ind_range = max_ind_range
         self.phase = phase
         self.counts = self.read_count(data_path)
         self.index = 0
         if max_ind_range > 0:
             self.counts = np.minimum(self.counts, max_ind_range)
-
-        if self.hash_flag:
-            for i in range(self.num_sparse):
-                if self.counts[i] > 2000 * self.compress_rate:
-                    self.counts[i] = int(
-                        math.ceil(self.counts[i] * self.compress_rate))
 
         train_n_day = 23
         if phase == 'train':
@@ -241,8 +191,6 @@ class CriteoTBDataSet(CTRDataset):
         sparse_data = sparse_file[index]
         if self.max_ind_range != -1:
             sparse_data = sparse_data % self.max_ind_range
-        if self.hash_flag:
-            sparse_data = sparse_data % self.counts
         return (sparse_data, dense_file[index], label_file[index])
 
     @property
@@ -342,22 +290,12 @@ def make_datasets_and_loaders(args):
 
     train_data = dataset_cls(
         args.data_path,
-        args.compress_rate,
         'train',
-        args.hash_flag,
-        args.bucket_flag,
-        hot_features,
-        args.hash_rate,
         args.max_ind_range,
     )
     test_data = dataset_cls(
         args.data_path,
-        args.compress_rate,
         'test',
-        args.hash_flag,
-        args.bucket_flag,
-        hot_features,
-        args.hash_rate,
         args.max_ind_range,
     )
 

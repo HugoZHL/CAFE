@@ -122,6 +122,7 @@ class CriteoTBDataset(CTRDataset):
             for f in sparse:
                 cur_set = set(sparse[f])
                 uniques.append(list(cur_set))
+                del cur_set
             with open(self.join(f'uniques_{i}.pkl'), 'wb') as fw:
                 pickle.dump(uniques, fw)
             del uniques
@@ -139,8 +140,11 @@ class CriteoTBDataset(CTRDataset):
                 cur_list = ['0'] + list(cur_set)
             else:
                 cur_list = list(cur_set)
+            del cur_set
             reverse_dict = {v: k for k, v in enumerate(cur_list)}
+            del cur_list
             uniques[i] = reverse_dict
+            del reverse_dict
         counts = [len(uni) for uni in uniques]
         npcounts = np.array(counts, dtype=np.int32)
         npcounts.tofile(self.join('processed_count.bin'))
@@ -152,6 +156,7 @@ class CriteoTBDataset(CTRDataset):
                 sparse[f] = sparse[f].apply(lambda x: uniques[j][x])
             sparse = np.array(sparse, dtype=np.int32)
             sparse.tofile(self.join(f'sparse_{i}_sep.bin'))
+            del sparse
 
 
 class AvazuDataset(CTRDataset):

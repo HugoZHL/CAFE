@@ -20,9 +20,7 @@ python ../main.py \
 --learning_rate=0.1 \
 --mini_batch_size=2048 \
 --print_freq=2048 \
---print_time \
 --test_freq=102400 \
---test_mini_batch_size=16384 \
 --data_path="/home/zhl/criteo_24days" \
 $dlrm_extra_option 2>&1 | tee wdl.log
 
