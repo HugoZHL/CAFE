@@ -1,0 +1,48 @@
+{
+    "base": {
+        "embedding_dim": 16,
+        "dataset": "avazu",
+        "learning_rate": 0.1,
+        "mini_batch_size": 128,
+        "print_freq": 1024,
+        "test_freq": 30000,
+        "data_path": "datasets/avazu"
+    },
+    "full": {
+        "tensor_board_filename": "board/avazu/full"
+    },
+    "hash": {
+        "compress_method": "hash",
+        "tensor_board_filename": "board/avazu/hash",
+        "compress_rate": [
+            0.5, 0.2, 0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001, 0.0005, 0.0002, 0.0001
+        ]
+    },
+    "qr": {
+        "compress_method": "qr",
+        "tensor_board_filename": "board/avazu/qr",
+        "compress_rate": [
+            0.5, 0.2, 0.1, 0.05, 0.02, 0.01, 0.005, 0.002
+        ]
+    },
+    "ada": {
+        "compress_method": "ada",
+        "tensor_board_filename": "board/avazu/ada",
+        "compress_rate": [
+            0.5, 0.2
+        ]
+    },
+    "cafe": {
+        "compress_method": "cafe",
+        "tensor_board_filename": "board/avazu/cafe",
+        "compress_rate": [
+            0.5, 0.2, 0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001, 0.0005, 0.0002, 0.0001
+        ],
+        "cafe_sketch_threshold": [
+            10, 10, 20, 30, 50, 100, 200, 500, 500, 500, 500, 500
+        ],
+        "cafe_hash_rate": [
+            0.7, 0.5, 0.5, 0.5, 0.3, 0.3, 0.2, 0.2, 0.2, 0.1, 0.1, 0.1
+        ]
+    }
+}
