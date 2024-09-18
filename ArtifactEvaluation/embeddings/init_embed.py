@@ -90,6 +90,7 @@ class EmbeddingLayer(nn.Module):
         elif self.compress_method == 'cafe':
             cafe_hash_rate = args.cafe_hash_rate
             cafe_sketch_threshold = args.cafe_sketch_threshold
+            cafe_decay = args.cafe_decay
             cur_dir = osp.join(osp.split(osp.abspath(__file__))[0])
             if not osp.exists(f'{cur_dir}/sklib.so'):
                 os.system(f"g++ -fPIC -shared -o {cur_dir}/sklib.so -g -rdynamic -mavx2 -mbmi -mavx512bw -mavx512dq --std=c++17 -O3 -fopenmp {cur_dir}/sketch.cpp")
@@ -115,7 +116,7 @@ class EmbeddingLayer(nn.Module):
             init.restype = None
             numpy_array = self.sketch_buffer.numpy()
             data_ptr = numpy_array.ctypes.data_as(ctypes.POINTER(ctypes.c_int))
-            init(hotn, cafe_sketch_threshold, data_ptr)
+            init(hotn, cafe_sketch_threshold, data_ptr, ctypes.c_double(cafe_decay))
         N = 0
         for i in range(embedding_nums.size):
             n = embedding_nums[i]

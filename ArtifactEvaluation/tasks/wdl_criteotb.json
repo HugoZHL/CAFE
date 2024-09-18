@@ -11,32 +11,32 @@
         "data_path": "datasets/criteotb"
     },
     "full": {
-        "tensor_board_filename": "board/criteotb/full"
+        "tensor_board_filename": "board/wdl_criteotb/full"
     },
     "hash": {
         "compress_method": "hash",
-        "tensor_board_filename": "board/criteotb/hash",
+        "tensor_board_filename": "board/wdl_criteotb/hash",
         "compress_rate": [
             0.05, 0.01, 0.002, 0.0005, 0.0001
         ]
     },
     "qr": {
         "compress_method": "qr",
-        "tensor_board_filename": "board/criteotb/qr",
+        "tensor_board_filename": "board/wdl_criteotb/qr",
         "compress_rate": [
             0.05, 0.01, 0.002, 0.0005
         ]
     },
     "ada": {
         "compress_method": "ada",
-        "tensor_board_filename": "board/criteotb/ada",
+        "tensor_board_filename": "board/wdl_criteotb/ada",
         "compress_rate": [
             0.05
         ]
     },
     "cafe": {
         "compress_method": "cafe",
-        "tensor_board_filename": "board/criteotb/cafe",
+        "tensor_board_filename": "board/wdl_criteotb/cafe",
         "compress_rate": [
             0.05, 0.01, 0.002, 0.0005, 0.0001
         ],

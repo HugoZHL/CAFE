@@ -17,8 +17,11 @@ def run_task(task, gpu_id):
     log_dir = task['tensor_board_filename']
     os.makedirs(log_dir, exist_ok=True)
     log_file = osp.join(log_dir, 'stdouterr.log')
-    task_name = f"{task['compress_method']}:{task['compress_rate']}"
+    task_name = osp.split(log_dir)[1]
     print(f"Running task {task_name} on GPU {gpu_id}...")
+
+    with open(osp.join(log_dir, 'config.json'), 'w') as fw:
+        json.dump(task, fw, indent=4)
 
     env = os.environ.copy()
     env["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
@@ -32,7 +35,7 @@ def run_task(task, gpu_id):
 
     print(f"Task {task_name} on GPU {gpu_id} finished with return code {result.returncode}")
 
-def load_tasks(config_file, flatten=['compress_rate', 'cafe_sketch_threshold', 'cafe_hash_rate']):
+def load_tasks(config_file, flatten=['compress_rate', 'cafe_sketch_threshold', 'cafe_hash_rate', 'cafe_decay']):
     with open(config_file, 'r') as file:
         config = json.load(file)
     base_args = config['base']
@@ -41,22 +44,27 @@ def load_tasks(config_file, flatten=['compress_rate', 'cafe_sketch_threshold', '
     for met in methods:
         if met in config:
             new_task = base_args.copy()
-            for k, v in config[met].items():
-                if k not in flatten:
-                    new_task[k] = v
             flags = {}
-            for fl in flatten:
-                if fl in config[met]:
-                    flags[fl] = config[met][fl]
+            for k, v in config[met].items():
+                if k not in flatten or not isinstance(v, list):
+                    new_task[k] = v
+                else:
+                    flags[k] = v
             if flags == {}:
                 tasks.append(new_task)
                 continue
             fls = list(flags.keys())
+            if 'compress_rate' in flags:
+                diff = 'compress_rate'
+            else:
+                if len(flags) > 1:
+                    raise AssertionError("Not support more than 1 difference besides compress_rate!")
+                diff = fls[0]
             for vs in zip(*flags.values()):
                 cur_new_task = new_task.copy()
                 for fl, v in zip(fls, vs):
                     cur_new_task[fl] = v
-                cur_new_task['tensor_board_filename'] += str(cur_new_task['compress_rate'])
+                cur_new_task['tensor_board_filename'] += str(cur_new_task[diff])
                 tasks.append(cur_new_task)
     return tasks
 

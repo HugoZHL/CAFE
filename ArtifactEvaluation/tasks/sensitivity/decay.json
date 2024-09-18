@@ -1,0 +1,21 @@
+{
+    "base": {
+        "embedding_dim": 16,
+        "dataset": "criteo",
+        "compress_rate": 0.001,
+        "learning_rate": 0.1,
+        "mini_batch_size": 128,
+        "print_freq": 1024,
+        "test_freq": 30000,
+        "data_path": "datasets/criteo"
+    },
+    "cafe": {
+        "compress_method": "cafe",
+        "tensor_board_filename": "board/sensitivity/decay",
+        "cafe_hash_rate": 0.2,
+        "cafe_sketch_threshold": 500,
+        "cafe_decay": [
+            0.9, 0.95, 0.98, 1
+        ]
+    }
+}

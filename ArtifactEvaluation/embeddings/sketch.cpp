@@ -12,6 +12,7 @@ extern "C" {
         int Threshold;
         double tot;
         double p, x, y;
+        double decay_rate;
         void* addr;
         struct Bucket{
             uint32_t val[4];
@@ -24,14 +25,15 @@ extern "C" {
     public:
         queue<uint32_t> hot_id;
         
-        SS(int k = 200, int lim = 130670, void* addr = NULL): k(k), lim(lim) {
+        SS(int k = 200, int lim = 130670, void* addr = NULL, double dr=0.99): k(k), lim(lim) {
             Threshold = k;
+            decay_rate = dr;
             s = lim;
             tot = 0;
             num = 0;
             printf("size: %d\n", s);
             if (addr == NULL) return;
-            bucket = new(addr) Bucket [s];
+            bucket = new Bucket [s];
             n = 0;
             x = 0.25;
             y = 0.25;
@@ -77,11 +79,11 @@ extern "C" {
             printf("decay: hot_nums: %d, tot: %lf %lld\n", num, tot, 1ll * s * k);
             for (int key = 0; key < s; ++key) {
                 for (int i = 0; i < 4; ++i) {
-                    if (bucket[key].dic[i] && bucket[key].cnt[i] * 0.99 < k){
+                    if (bucket[key].dic[i] && bucket[key].cnt[i] * decay_rate < k){
                         hot_id.push(bucket[key].dic[i]);
                         bucket[key].dic[i] = 0;
                     }
-                    bucket[key].cnt[i] *= 0.99;
+                    bucket[key].cnt[i] *= decay_rate;
                 }
             }
             tot = 0;
@@ -222,8 +224,8 @@ extern "C" {
     void print() {
         ss->print();
     }
-    void init(int n, int Threshold, void* addr){
-        ss = new SS(Threshold, n, addr);
+    void init(int n, int Threshold, void* addr, double dr){
+        ss = new SS(Threshold, n, addr, dr);
     }
 }
 

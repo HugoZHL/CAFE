@@ -127,6 +127,7 @@ def main():
     # cafe flags
     parser.add_argument("--cafe_sketch_threshold", type=int, default=500)
     parser.add_argument("--cafe_hash_rate", type=float, default=0.5)
+    parser.add_argument("--cafe_decay", type=float, default=0.99)
 
     # gpu
     parser.add_argument("--use_gpu", type=bool, default=True)
