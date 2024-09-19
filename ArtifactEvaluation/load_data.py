@@ -258,6 +258,68 @@ class KDD12Dataset(CTRDataset):
     def __len__(self):
         return len(self.index)
 
+
+class CriteoTBOneThirdDataset(CriteoTBDataset):
+    def __init__(
+        self,
+        data_path,
+        phase,
+        max_ind_range=-1,
+    ):
+        self.max_ind_range = max_ind_range
+        self.phase = phase
+        self.counts = self.read_count(data_path)
+        self.index = 0
+        if max_ind_range > 0:
+            self.counts = np.minimum(self.counts, max_ind_range)
+
+        if phase == 'train':
+            train_days = list(range(0, 24, 3))
+            self.sparse_file = []
+            self.dense_file = []
+            self.label_file = []
+            self.num_entry = 0
+            self.file_offset = np.zeros(len(train_days), dtype=np.int64)
+            for day in train_days:
+                c_mmap = self.read_n_check(
+                    osp.join(data_path, f'sparse_{day}_sep.bin'),
+                    np.int32, (-1, self.num_sparse)
+                )
+                d_mmap = self.read_n_check(
+                    osp.join(data_path, f'dense_{day}.bin'),
+                    np.float32, (-1, self.num_dense),
+                )
+                l_mmap = self.read_n_check(
+                    osp.join(data_path, f'label_{day}.bin'),
+                    np.int32, (-1,),
+                )
+                sz = l_mmap.shape[0]
+                self.num_entry += sz
+                self.file_offset[day] = self.num_entry
+                self.sparse_file.append(c_mmap)
+                self.dense_file.append(d_mmap)
+                self.label_file.append(l_mmap)
+        else:
+            day = 23
+            self.sparse_file = self.read_n_check(
+                osp.join(data_path, f'sparse_{day}_sep.bin'),
+                np.int32, (-1, self.num_sparse)
+            )
+            self.dense_file = self.read_n_check(
+                osp.join(data_path, f'dense_{day}.bin'),
+                np.float32, (-1, self.num_dense),
+            )
+            self.label_file = self.read_n_check(
+                osp.join(data_path, f'label_{day}.bin'),
+                np.int32, (-1,),
+            )
+            self.num_entry = self.label_file.shape[0]
+
+    @property
+    def num_sample(self):
+        return 1648937279
+
+
 def collate_wrapper(list_of_tuples):
     transposed_data = list(zip(*list_of_tuples))
     X_int = transposed_data[1]
@@ -284,6 +346,7 @@ def make_datasets_and_loaders(args):
         'criteotb': CriteoTBDataset,
         'avazu': AvazuDataset,
         'kdd12': KDD12Dataset,
+        'criteotb13': CriteoTBOneThirdDataset,
     }[args.dataset]
 
     train_data = dataset_cls(

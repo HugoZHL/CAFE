@@ -1,3 +1,4 @@
+import os
 import os.path as osp
 import argparse
 import numpy as np
@@ -16,6 +17,8 @@ def get_dataset(dataset):
         return CriteoTBDataset(dataset)
     elif dataset == 'kdd12':
         return KDD12Dataset(dataset)
+    elif dataset == 'criteotb13':
+        return CriteoTBOneThirdDataset(dataset)
 
 
 class CTRDataset(object):
@@ -183,13 +186,51 @@ class KDD12Dataset(CTRDataset):
         self.save_count(counts)
 
 
+class CriteoTBOneThirdDataset(CTRDataset):
+    def process_data(self):
+        days = list(range(0, 24, 3)) + [23]
+        num_sparse = 26
+        uniques = [[] for _ in range(num_sparse)]
+        for i in days:
+            os.symlink(osp.join('criteotb', f'label_{i}.bin'), self.join(f'label_{i}.bin'))
+            os.symlink(osp.join('criteotb', f'dense_{i}.bin'), self.join(f'dense_{i}.bin'))
+            with open(osp.join('criteotb', f'uniques_{i}.pkl'), 'rb') as fr:
+                cur_uniques = pickle.load(fr)
+            for j, uni in enumerate(cur_uniques):
+                uniques[j] += uni
+        for i in range(num_sparse):
+            cur_set = set(uniques[i])
+            if '0' in cur_set:
+                cur_set.remove('0')
+                cur_list = ['0'] + list(cur_set)
+            else:
+                cur_list = list(cur_set)
+            del cur_set
+            reverse_dict = {v: k for k, v in enumerate(cur_list)}
+            del cur_list
+            uniques[i] = reverse_dict
+            del reverse_dict
+        counts = [len(uni) for uni in uniques]
+        npcounts = np.array(counts, dtype=np.int32)
+        npcounts.tofile(self.join('processed_count.bin'))
+        for i in days:
+            sparse = pd.read_csv(osp.join('criteotb', f'day_{i}'), header=None, sep='\t')[
+                range(14, 40)]
+            sparse = sparse.fillna('0')
+            for j, f in enumerate(range(14, 40)):
+                sparse[f] = sparse[f].apply(lambda x: uniques[j][x])
+            sparse = np.array(sparse, dtype=np.int32)
+            sparse.tofile(self.join(f'sparse_{i}_sep.bin'))
+            del sparse
+
+
 if __name__ == '__main__':
     tracemalloc.start()
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--dataset',
         type=str, required=True,
-        choices=['criteo', 'criteotb', 'avazu', 'kdd12']
+        choices=['criteo', 'criteotb', 'avazu', 'kdd12', 'criteotb13']
     )
     args = parser.parse_args()
     dataset = get_dataset(args.dataset)
