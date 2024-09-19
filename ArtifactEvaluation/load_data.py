@@ -109,7 +109,7 @@ class CriteoDataset(CTRDataset):
             self.label = self.label[train_len:]
 
 
-class CriteoTBDataSet(CTRDataset):
+class CriteoTBDataset(CTRDataset):
     def __init__(
         self,
         data_path,
@@ -281,7 +281,7 @@ def make_datasets_and_loaders(args):
 
     dataset_cls = {
         'criteo': CriteoDataset,
-        'criteotb': CriteoTBDataSet,
+        'criteotb': CriteoTBDataset,
         'avazu': AvazuDataset,
         'kdd12': KDD12Dataset,
     }[args.dataset]

@@ -18,6 +18,17 @@ from embeddings.init_embed import EmbeddingLayer
 from models import DLRM_Net, WDL_Net, DCN_Net
 
 
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
 def inference(
     args,
     dlrm,
@@ -123,14 +134,16 @@ def main():
     parser.add_argument("--max_ind_range", type=int, default=-1)
 
     # md flags
-    parser.add_argument("--md_round_dims", type=bool, default=False)
+    parser.add_argument("--md_round_dims", type=str2bool, default=False)
     # cafe flags
     parser.add_argument("--cafe_sketch_threshold", type=int, default=500)
     parser.add_argument("--cafe_hash_rate", type=float, default=0.5)
     parser.add_argument("--cafe_decay", type=float, default=0.99)
+    parser.add_argument("--cafe_hot_separate_field", type=str2bool, default=False)
+    parser.add_argument("--cafe_use_freq", type=str2bool, default=False)
 
     # gpu
-    parser.add_argument("--use_gpu", type=bool, default=True)
+    parser.add_argument("--use_gpu", type=str2bool, default=True)
     # training
     parser.add_argument("--num_workers", type=int, default=8)
     parser.add_argument("--mini_batch_size", type=int, default=1)
@@ -140,14 +153,14 @@ def main():
     parser.add_argument("--numpy_rand_seed", type=int, default=123)
     parser.add_argument("--optimizer", type=str, default="sgd")
     # testing
-    parser.add_argument("--inference_only", type=bool, default=False)
+    parser.add_argument("--inference_only", type=str2bool, default=False)
     parser.add_argument("--test_freq", type=int, default=-1)
     parser.add_argument("--test_mini_batch_size", type=int, default=16384)
     parser.add_argument("--test_num_workers", type=int, default=16)
     # debugging and profiling
     parser.add_argument("--print_freq", type=int, default=1)
-    parser.add_argument("--print_time", type=bool, default=True)
-    parser.add_argument("--print_wall_time", type=bool, default=False)
+    parser.add_argument("--print_time", type=str2bool, default=True)
+    parser.add_argument("--print_wall_time", type=str2bool, default=False)
     parser.add_argument("--tensor_board_filename",
                         type=str, default="run_kaggle_pt")
     # store/load model

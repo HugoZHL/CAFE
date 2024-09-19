@@ -20,9 +20,12 @@ class SKEmbeddingBag(nn.Module):
         embedding_dim,
         f_offset,
         hash_size,
+        cafe_hot_separate_field,
     ):
         super(SKEmbeddingBag, self).__init__()
         self.field_idx = field_idx
+        self.ss_idx = self.field_idx if cafe_hot_separate_field else 0
+        self.cafe_hot_separate_field = cafe_hot_separate_field
         self.lib = lib
         self.offset = f_offset
         self.hash_size = hash_size
@@ -35,17 +38,17 @@ class SKEmbeddingBag(nn.Module):
         self.device = device
         self.grad_norm = 0
         self.ins = self.lib.batch_insert
-        self.ins.argtypes = [ctypes.POINTER(ctypes.c_int), ctypes.c_int]
+        self.ins.argtypes = [ctypes.POINTER(ctypes.c_int), ctypes.c_int, ctypes.c_int]
         self.ins.restype = ctypes.POINTER(ctypes.c_int)
         self.query_dic = None
 
         self.que = self.lib.batch_query
-        self.que.argtypes = [ctypes.POINTER(ctypes.c_int), ctypes.c_int]
+        self.que.argtypes = [ctypes.POINTER(ctypes.c_int), ctypes.c_int, ctypes.c_int]
         self.que.restype = ctypes.POINTER(ctypes.c_int)
 
         self.inv = self.lib.batch_insert_val
         self.inv.argtypes = [ctypes.POINTER(
-            ctypes.c_int), ctypes.POINTER(ctypes.c_float), ctypes.c_int]
+            ctypes.c_int), ctypes.POINTER(ctypes.c_float), ctypes.c_int, ctypes.c_int]
         self.inv.restype = ctypes.POINTER(ctypes.c_int)
 
         self.weight_hash = Parameter(
@@ -60,8 +63,8 @@ class SKEmbeddingBag(nn.Module):
         addr = input_l.ctypes.data_as(ctypes.POINTER(ctypes.c_int))
         input_c = ctypes.cast(addr, ctypes.POINTER(ctypes.c_int))
 
-        mask_ptr = self.ins(input_c, N)
-        dic_ptr = self.que(input_c, N)
+        mask_ptr = self.ins(input_c, N, self.ss_idx)
+        dic_ptr = self.que(input_c, N, self.ss_idx)
 
         mask = torch.frombuffer(ctypes.cast(mask_ptr, ctypes.POINTER(
             ctypes.c_int * N)).contents, dtype=torch.int32, count=N)
@@ -79,7 +82,7 @@ class SKEmbeddingBag(nn.Module):
         input_c = ctypes.cast(addr, ctypes.POINTER(ctypes.c_int))
         self.input_c = input_c
 
-        dic_ptr = self.que(input_c, N)
+        dic_ptr = self.que(input_c, N, self.ss_idx)
         dic = torch.frombuffer(ctypes.cast(dic_ptr, ctypes.POINTER(
             ctypes.c_int * N)).contents, dtype=torch.int32, count=N)
         dic_mask = (dic < 0)
@@ -118,9 +121,12 @@ class SKEmbeddingBag(nn.Module):
 
     def query_norm(self, input):
         N = len(input)
-        l = self.field_num * N
-        r = l + N
         dic_mask = self.query_dic
+        if self.cafe_hot_separate_field:
+            l = 0
+        else:
+            l = self.field_num * N
+        r = l + N
         grad_norm = torch.where(
             dic_mask,
             torch.norm(self.weight_h.grad._values()[l: r], dim=1, p=2),
@@ -135,30 +141,36 @@ class SKEmbeddingBag(nn.Module):
         self.grad_norm = lst
         return grad_norm.cpu()
 
-    def insert_grad(self, input):
+    def insert_grad(self, input, use_freq=False):
 
         N = len(input)
-        l = self.field_idx * N
+        if self.cafe_hot_separate_field:
+            l = 0
+        else:
+            l = self.field_idx * N
         r = l + N
-        grad_norm = torch.where(
-            torch.from_numpy(self.query_dic).to(self.device),
-            torch.norm(self.weight_h.grad._values()[l: r], dim=1, p=2),
-            torch.norm(self.weight_hash.grad._values(), dim=1, p=2),
-        )
+        if use_freq:
+            grad_norm_np = np.ones(N, dtype=np.float32)
+        else:
+            grad_norm = torch.where(
+                torch.from_numpy(self.query_dic).to(self.device),
+                torch.norm(self.weight_h.grad._values()[l: r], dim=1, p=2),
+                torch.norm(self.weight_hash.grad._values(), dim=1, p=2),
+            )
 
-        grad_norm = grad_norm * N / torch.sum(grad_norm)
-        grad_norm_np = grad_norm.cpu().numpy()
+            grad_norm = grad_norm * N / torch.sum(grad_norm)
+            grad_norm_np = grad_norm.cpu().numpy()
         grad_norm_addr = grad_norm_np.ctypes.data_as(
             ctypes.POINTER(ctypes.c_float))
         grad_norm_c = ctypes.cast(
             grad_norm_addr, ctypes.POINTER(ctypes.c_float))
 
-        mask_ptr = self.inv(self.input_c, grad_norm_c, N)
+        mask_ptr = self.inv(self.input_c, grad_norm_c, N, self.ss_idx)
         mask = torch.frombuffer(ctypes.cast(mask_ptr, ctypes.POINTER(
             ctypes.c_int * N)).contents, dtype=torch.int32, count=N)
         idx = torch.nonzero(mask)
 
-        dic_ptr = self.que(self.input_c, N)
+        dic_ptr = self.que(self.input_c, N, self.ss_idx)
         dic = torch.frombuffer(ctypes.cast(dic_ptr, ctypes.POINTER(
             ctypes.c_int * N)).contents, dtype=torch.int32, count=N)
         dic = torch.abs(dic)

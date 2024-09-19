@@ -27,7 +27,7 @@ class EmbeddingLayer(nn.Module):
         self.compress_method = args.compress_method
         compress_rate = args.compress_rate
         # here we use adaptive threshold w.r.t. compress rate
-        compress_threshold = 400 / (1 - np.log2(compress_rate))
+        compress_threshold = 2000 * compress_rate
         self.embedding_nums = embedding_nums
 
         embs = nn.ModuleList()
@@ -91,6 +91,8 @@ class EmbeddingLayer(nn.Module):
             cafe_hash_rate = args.cafe_hash_rate
             cafe_sketch_threshold = args.cafe_sketch_threshold
             cafe_decay = args.cafe_decay
+            cafe_hot_separate_field = args.cafe_hot_separate_field
+            self.cafe_use_freq = args.cafe_use_freq
             cur_dir = osp.join(osp.split(osp.abspath(__file__))[0])
             if not osp.exists(f'{cur_dir}/sklib.so'):
                 os.system(f"g++ -fPIC -shared -o {cur_dir}/sklib.so -g -rdynamic -mavx2 -mbmi -mavx512bw -mavx512dq --std=c++17 -O3 -fopenmp {cur_dir}/sketch.cpp")
@@ -98,25 +100,23 @@ class EmbeddingLayer(nn.Module):
             self.lib = lib
 
             totn = sum(embedding_nums)
-            hotn = int(totn * compress_rate * (1 - cafe_hash_rate)
-                    * (embedding_dim * 4 / (embedding_dim * 4 + 48)))
-            cafe_hash_rate = compress_rate * cafe_hash_rate
-            self.hotn = hotn
-            print(f"cafe_hash_rate: {cafe_hash_rate}, hotn: {hotn}")
-
-            self.weight_high = Parameter(
-                torch.Tensor(hotn, embedding_dim),
-                requires_grad=True,
-            )
-            scale = np.sqrt(1 / max(embedding_nums))
-            nn.init.uniform_(self.weight_high, -scale, scale)
-            self.register_buffer('sketch_buffer', torch.zeros(hotn * 12, dtype = torch.int32, device = 'cpu'))
             init = lib.init
-            init.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_void_p]
+            init.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_double, ctypes.c_int]
             init.restype = None
-            numpy_array = self.sketch_buffer.numpy()
-            data_ptr = numpy_array.ctypes.data_as(ctypes.POINTER(ctypes.c_int))
-            init(hotn, cafe_sketch_threshold, data_ptr, ctypes.c_double(cafe_decay))
+            real_cafe_hash_rate = compress_rate * cafe_hash_rate
+            if not cafe_hot_separate_field:
+                hotn = int(totn * compress_rate * (1 - cafe_hash_rate)
+                        * (embedding_dim * 4 / (embedding_dim * 4 + 48)))
+                self.hotn = hotn
+                print(f"cafe_hash_rate: {real_cafe_hash_rate}, hotn: {hotn}")
+
+                self.weight_high = Parameter(
+                    torch.Tensor(hotn, embedding_dim),
+                    requires_grad=True,
+                )
+                scale = np.sqrt(1 / max(embedding_nums))
+                nn.init.uniform_(self.weight_high, -scale, scale)
+                init(hotn, cafe_sketch_threshold, ctypes.c_double(cafe_decay), ctypes.c_int(0))
         N = 0
         for i in range(embedding_nums.size):
             n = embedding_nums[i]
@@ -144,18 +144,39 @@ class EmbeddingLayer(nn.Module):
                 self.f_offset[i] = N
                 N += n
             elif self.compress_method == 'cafe' and n > compress_threshold:
-                EE = SKEmbeddingBag(
-                    N,
-                    self.hotn,
-                    self.lib,
-                    self.weight_high,
-                    self.device,
-                    n,
-                    embedding_dim,
-                    tot_nums,
-                    int(math.ceil(cafe_hash_rate * n)),
-                )
-                self.sketch_emb[i] = True
+                if cafe_hot_separate_field:
+                    hotn = int(n * compress_rate * (1 - cafe_hash_rate) 
+                               * (embedding_dim * 4 / (embedding_dim * 4 + 48)))
+                    if hotn > 0:
+                        print(f"cafe_hash_rate: {real_cafe_hash_rate}, hotn: {hotn}/{n}")
+
+                        weight_high = Parameter(
+                            torch.Tensor(hotn, embedding_dim),
+                            requires_grad=True,
+                        )
+                        scale = np.sqrt(1 / n)
+                        nn.init.uniform_(weight_high, -scale, scale)
+                        init(hotn, cafe_sketch_threshold, ctypes.c_double(cafe_decay), ctypes.c_int(N))
+                else:
+                    hotn = self.hotn
+                    weight_high = self.weight_high
+                if hotn > 0:
+                    EE = SKEmbeddingBag(
+                        N,
+                        hotn,
+                        self.lib,
+                        weight_high,
+                        self.device,
+                        n,
+                        embedding_dim,
+                        tot_nums,
+                        int(math.ceil(real_cafe_hash_rate * n)),
+                        cafe_hot_separate_field,
+                    )
+                    self.sketch_emb[i] = True
+                else:
+                    EE = HashEmbeddingBag(n, embedding_dim, compress_rate, mode="sum", sparse=True)
+                    nn.init.uniform_(EE.weight, -scale, scale)
                 N += 1
             elif self.compress_method == 'hash' and n > compress_threshold:
                 EE = HashEmbeddingBag(n, embedding_dim, compress_rate, mode="sum", sparse=True)
@@ -195,7 +216,7 @@ class EmbeddingLayer(nn.Module):
         if self.compress_method == 'cafe':
             for k, input in enumerate(lS_i):
                 if self.sketch_emb[k] == True:
-                    self.embeddings[k].insert_grad(input)
+                    self.embeddings[k].insert_grad(input, self.cafe_use_freq)
         elif self.compress_method == 'ada':
             tmp = 0
             N = len(lS_i[0])

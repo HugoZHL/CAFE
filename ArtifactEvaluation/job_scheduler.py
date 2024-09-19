@@ -68,9 +68,12 @@ def load_tasks(config_file, flatten=['compress_rate', 'cafe_sketch_threshold', '
                 tasks.append(cur_new_task)
     return tasks
 
-def schedule(config_file):
+def schedule(config_files):
     num_gpus = torch.cuda.device_count()  # Number of GPUs available
-    tasks = load_tasks(config_file)
+    tasks = []
+    for config_file in config_files:
+        tasks.extend(load_tasks(config_file))
+    print('Number of tasks:', len(tasks))
 
     # Use ThreadPoolExecutor to manage GPU tasks
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_gpus) as executor:
@@ -96,7 +99,7 @@ def schedule(config_file):
             sleep(60)
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
+    if len(sys.argv) < 2:
         raise AssertionError("Usage: python job_scheduler.py <config_file>")
-    config_file = sys.argv[1]
-    schedule(config_file)
+    config_files = sys.argv[1:]
+    schedule(config_files)

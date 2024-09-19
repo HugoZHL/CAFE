@@ -13,7 +13,6 @@ extern "C" {
         double tot;
         double p, x, y;
         double decay_rate;
-        void* addr;
         struct Bucket{
             uint32_t val[4];
             float cnt[4];
@@ -25,14 +24,13 @@ extern "C" {
     public:
         queue<uint32_t> hot_id;
         
-        SS(int k = 200, int lim = 130670, void* addr = NULL, double dr=0.99): k(k), lim(lim) {
+        SS(int k = 200, int lim = 130670, double dr=0.99): k(k), lim(lim) {
             Threshold = k;
             decay_rate = dr;
             s = lim;
             tot = 0;
             num = 0;
             printf("size: %d\n", s);
-            if (addr == NULL) return;
             bucket = new Bucket [s];
             n = 0;
             x = 0.25;
@@ -149,7 +147,7 @@ extern "C" {
             }
             return ins;
         }
-    }*ss;
+    }*ss[26];
     float cntm[16384];
     class CUsketch{
     public:
@@ -205,27 +203,27 @@ extern "C" {
         }
     }CU;
     
-    int* batch_query(uint32_t *data, int len) {
-        return ss->batch_query(data, len);
+    int* batch_query(uint32_t *data, int len, int idx) {
+        return ss[idx]->batch_query(data, len);
     }
     float* batch_cnt(uint32_t *data, int len) {
         return CU.batch_cnt(data, len);
     }
-    int* batch_insert(uint32_t *data, int len) {
-        return ss->batch_insert(data, len);
+    int* batch_insert(uint32_t *data, int len, int idx) {
+        return ss[idx]->batch_insert(data, len);
     }
-    int* batch_insert_val(uint32_t *data, float *v, int len) {
-        return ss->batch_insert_val(data, v, len);
+    int* batch_insert_val(uint32_t *data, float *v, int len, int idx) {
+        return ss[idx]->batch_insert_val(data, v, len);
     }
-    void update() {
-        ss->update();
+    void update(int idx) {
+        ss[idx]->update();
         //ss->print();
     }
-    void print() {
-        ss->print();
+    void print(int idx) {
+        ss[idx]->print();
     }
-    void init(int n, int Threshold, void* addr, double dr){
-        ss = new SS(Threshold, n, addr, dr);
+    void init(int n, int Threshold, double dr, int idx){
+        ss[idx] = new SS(Threshold, n, dr);
     }
 }
 
