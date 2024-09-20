@@ -9,9 +9,6 @@
         "test_freq": 102400,
         "data_path": "datasets/criteotb"
     },
-    "full": {
-        "tensor_board_filename": "board/criteotb/full"
-    },
     "hash": {
         "compress_method": "hash",
         "tensor_board_filename": "board/criteotb/hash",

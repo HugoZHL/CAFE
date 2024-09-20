@@ -115,6 +115,7 @@ if __name__ == '__main__':
     # it's ok to directly pass all crs, since those non-exist will not be plotted
     all_crs = [0.5, 0.2, 0.1, 0.05, 0.02, 0.01, 0.005, 0.002, 0.001, 0.0005, 0.0002, 0.0001]
     methods = ['full', 'hash', 'qr', 'ada', 'cafe']
+    no_full_methods = ['hash', 'qr', 'ada', 'cafe']
     plot_figure('criteo', 'auc', methods, all_crs)
     plot_figure('criteo', 'loss', methods, all_crs)
     plot_figure('kdd12', 'auc', methods, all_crs)
@@ -124,13 +125,17 @@ if __name__ == '__main__':
 
     # plot wdl and dcn
     crs = [0.05, 0.01, 0.002, 0.0005, 0.0001]
-    plot_figure('wdl_criteotb', 'auc', methods, crs)
-    plot_figure('wdl_criteotb', 'loss', methods, crs)
-    plot_figure('wdl_criteotb', 'auc', methods, crs)
-    plot_figure('wdl_criteotb', 'loss', methods, crs)
+    plot_figure('wdl_criteotb', 'auc', no_full_methods, crs)
+    plot_figure('wdl_criteotb', 'loss', no_full_methods, crs)
+    plot_figure('wdl_criteotb', 'auc', no_full_methods, crs)
+    plot_figure('wdl_criteotb', 'loss', no_full_methods, crs)
 
     # plot mde
     plot_figure('criteo', 'auc', ['full', 'hash', 'mde', 'cafe'], [0.5, 0.2, 0.1])
     plot_figure('criteo', 'loss', ['full', 'hash', 'mde', 'cafe'], [0.5, 0.2, 0.1])
     plot_figure('criteotb', 'auc', ['full', 'hash', 'mde', 'cafe'], [0.1, 0.05, 0.02])
     plot_figure('criteotb', 'loss', ['full', 'hash', 'mde', 'cafe'], [0.1, 0.05, 0.02])
+
+    # plot criteotb-1/3
+    plot_figure('criteotb13', 'auc', no_full_methods, [0.1, 0.05, 0.02])
+    plot_figure('criteotb13', 'loss', no_full_methods, [0.1, 0.05, 0.02])

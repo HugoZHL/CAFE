@@ -28,7 +28,7 @@ extern "C" {
         
         SS(int k = 200, int lim = 130670, int hotn = 130670): k(k), lim(lim), hotn(hotn) {
             Threshold = k;
-            s = lim;
+            s = lim * 4 / bn;
             tot = 0;
             num = 0;
             printf("size: %d\n", s);
@@ -131,7 +131,6 @@ extern "C" {
             return 0;
         }
         int* batch_query(uint32_t *data, int len) {
-            #pragma omp parallel for
             for (int i = 0; i < len; ++i) {
                 que[i] = query(data[i]);
             }

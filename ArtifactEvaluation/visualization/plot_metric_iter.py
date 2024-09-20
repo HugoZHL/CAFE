@@ -197,8 +197,12 @@ if __name__ == '__main__':
 
     plot_loss('avazu', 0.2, methods=['full', 'hash', 'qr', 'ada', 'cafe'])
 
+    # criteotb
     # we don't have full for criteotb, since the embedding table is too large
     plot_auc('criteotb', 0.01, methods=['hash', 'qr', 'cafe'])
     plot_loss('criteotb', 0.01, methods=['hash', 'qr', 'cafe'])
     plot_auc('criteotb', 0.02, methods=['ada', 'cafe'])
     plot_loss('criteotb', 0.02, methods=['ada', 'cafe'])
+
+    # criteotb-1/3
+    plot_loss('criteotb13', 0.02, methods=['hash', 'qr', 'ada', 'cafe'])

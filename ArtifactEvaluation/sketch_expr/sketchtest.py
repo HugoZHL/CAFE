@@ -40,6 +40,9 @@ print(data)
 
 count = np.fromfile(osp.join(criteo_dir, 'processed_count.bin'), dtype=np.int32)
 print(count)
+field_offset = np.zeros(26, dtype=np.int32)
+for i in range(1, 26):
+    field_offset[i] = field_offset[i-1] + count[i-1]
 
 grad_norm_npy = np.zeros(np.sum(count), dtype=np.float32)
 
@@ -63,7 +66,7 @@ for c in [4, 8, 16, 32]:
             l = i * batch_size
             r = l + batch_size
             for j in range(26):
-                input = np.array(data[l: r, j], dtype=np.int32)
+                input = np.array(data[l: r, j], dtype=np.int32) + field_offset[j]
                 addr = input.ctypes.data_as(ctypes.POINTER(ctypes.c_int))
                 input_c = ctypes.cast(addr, ctypes.POINTER(ctypes.c_int))
                 np.add.at(grad_norm_npy, input, 1)
@@ -97,7 +100,7 @@ for c in [4, 8, 16, 32]:
         l = i * batch_size
         r = l + batch_size
         for j in range(26):
-            input = np.array(data[l: r, j], dtype=np.int32)
+            input = np.array(data[l: r, j], dtype=np.int32) + field_offset[j]
             addr = input.ctypes.data_as(ctypes.POINTER(ctypes.c_int))
             input_c = ctypes.cast(addr, ctypes.POINTER(ctypes.c_int))
             np.add.at(grad_norm_npy, input, 1)
@@ -130,14 +133,14 @@ day = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6]
 time_recall_1000 = pd.DataFrame(index=day, columns=["Sliding-window Topk", "Up-to-date Topk"])
 step = math.floor(len / batch_size)
 hotn = int(np.sum(count) * 0.7 * 0.001 * (16 / 28))
-init(int(hotn), 300, hotn, 4)
+init(int(hotn * rate[-1]), 300, hotn, 4)
+grad_norm_npy = np.zeros(np.sum(count), dtype=np.float32)
+grad_norm_npy_window = np.zeros(np.sum(count), dtype=np.float32)
 for i in range(step):
     l = i * batch_size
     r = l + batch_size
-    grad_norm_npy = np.zeros(np.sum(count), dtype=np.float32)
-    grad_norm_npy_window = np.zeros(np.sum(count), dtype=np.float32)
     for j in range(26):
-        input = np.array(data[l: r, j], dtype=np.int32)
+        input = np.array(data[l: r, j], dtype=np.int32) + field_offset[j]
         addr = input.ctypes.data_as(ctypes.POINTER(ctypes.c_int))
         input_c = ctypes.cast(addr, ctypes.POINTER(ctypes.c_int))
         np.add.at(grad_norm_npy, input, 1)
@@ -169,14 +172,14 @@ hotn = int(np.sum(count) * 0.3 * 0.01 * (16 / 28))
 day = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6]
 time_recall_100 = pd.DataFrame(index=day, columns=["Sliding-window Topk", "Up-to-date Topk"])
 step = math.floor(len / batch_size)
-init(int(hotn), 50, hotn, 4)
+init(int(hotn * rate[-1]), 50, hotn, 4)
+grad_norm_npy = np.zeros(np.sum(count), dtype=np.float32)
+grad_norm_npy_window = np.zeros(np.sum(count), dtype=np.float32)
 for i in range(step):
     l = i * batch_size
     r = l + batch_size
-    grad_norm_npy = np.zeros(np.sum(count), dtype=np.float32)
-    grad_norm_npy_window = np.zeros(np.sum(count), dtype=np.float32)
     for j in range(26):
-        input = np.array(data[l: r, j], dtype=np.int32)
+        input = np.array(data[l: r, j], dtype=np.int32) + field_offset[j]
         addr = input.ctypes.data_as(ctypes.POINTER(ctypes.c_int))
         input_c = ctypes.cast(addr, ctypes.POINTER(ctypes.c_int))
         np.add.at(grad_norm_npy, input, 1)
