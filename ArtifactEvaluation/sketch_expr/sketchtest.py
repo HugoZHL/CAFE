@@ -3,10 +3,13 @@ import numpy as np
 import time
 import math
 import os
+import os.path as osp
 import pandas as pd
 
-os.system("g++ -fPIC -shared -o sklibtest.so --std=c++17 -O3 -fopenmp ./sketchtest.cpp")
-lib = ctypes.CDLL('./sklibtest.so')
+cur_dir = osp.split(osp.abspath(__file__))[0]
+
+os.system(f"g++ -fPIC -shared -o {cur_dir}/sklibtest.so --std=c++17 -O3 -fopenmp {cur_dir}/sketchtest.cpp")
+lib = ctypes.CDLL(f'{cur_dir}/sklibtest.so')
 
 init = lib.init
 init.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
@@ -27,17 +30,16 @@ inv.restype = ctypes.POINTER(ctypes.c_int)
 
 analyse = lib.analyse
 analyse.argtypes = [ctypes.POINTER(ctypes.c_int), ctypes.c_int]
-inv.restype = None
+analyse.restype = ctypes.c_float
 
-data = np.memmap("../../criteo_kaggle/kaggle_processed_sparse.bin",
+criteo_dir = osp.join(cur_dir, '../datasets/criteo')
+
+data = np.memmap(osp.join(criteo_dir, "processed_sparse_sep.bin"),
                  dtype=np.int32, mode='r', shape=(45840617, 26))
 print(data)
 
-count = [1460, 583, 10131227, 2202608, 305,
-         24, 12517, 633, 3, 93145, 5683,
-         8351593, 3194, 27, 14992, 5461306,
-         10, 5652, 2173, 4, 7046547, 18,
-         15, 286181, 105, 142572]
+count = np.fromfile(osp.join(criteo_dir, 'processed_count.bin'), dtype=np.int32)
+print(count)
 
 grad_norm_npy = np.zeros(np.sum(count), dtype=np.float32)
 
@@ -54,8 +56,8 @@ mem = [633, 633 * 1.2, 633 * 1.4, 633 * 1.6, 633 * 1.8, 633 * 2, 633 * 2.2, 633 
 mem_recall = pd.DataFrame(index = mem, columns=[4, 8, 16, 32])
 
 for c in [4, 8, 16, 32]:
-    for i in range(8):
-        init(int(hotn * rate[i]), 300, hotn, c)
+    for k in range(8):
+        init(int(hotn * rate[k]), 300, hotn, c)
         grad_norm_npy = np.zeros(np.sum(count), dtype=np.float32)
         for i in range(math.floor(len / batch_size)):
             l = i * batch_size
@@ -79,21 +81,19 @@ for c in [4, 8, 16, 32]:
         ind_addr = ind.ctypes.data_as(ctypes.POINTER(ctypes.c_int))
         ind_c = ctypes.cast(ind_addr, ctypes.POINTER(ctypes.c_int))
         Recall = analyse(ind_c, hotn)
-        mem_recall.loc[mem[i], c] = Recall
+        mem_recall.loc[mem[k], c] = Recall
         print(mem_recall)
 
-mem_recall.to_csv("./excels/sketch/sketch_mem_recall.csv")
-
-
+mem_recall.to_csv(osp.join(cur_dir, "sketch_mem_recall.csv"))
 
 
 throughput_df = pd.DataFrame(index=[4,8,16,32], columns=["Insert", "Query"])
 step = math.floor(len / batch_size / 7)
 for c in [4, 8, 16, 32]:
-    init(int(hotn * rate[i]), 300, hotn, c)
+    init(int(hotn), 300, hotn, c)
     total_time = 0
     q_time = 0
-    for i in step:
+    for i in range(step):
         l = i * batch_size
         r = l + batch_size
         for j in range(26):
@@ -123,9 +123,7 @@ for c in [4, 8, 16, 32]:
     throughput_df.loc[c, "Query"] = throughput2
     throughput_df.loc[c, "Insert"] = throughput
 
-throughput_df.to_csv("./excels/sketch/throughput.csv")
-
-
+throughput_df.to_csv(osp.join(cur_dir, "throughput.csv"))
 
 
 day = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6]
@@ -133,7 +131,7 @@ time_recall_1000 = pd.DataFrame(index=day, columns=["Sliding-window Topk", "Up-t
 step = math.floor(len / batch_size)
 hotn = int(np.sum(count) * 0.7 * 0.001 * (16 / 28))
 init(int(hotn), 300, hotn, 4)
-for i in step:
+for i in range(step):
     l = i * batch_size
     r = l + batch_size
     grad_norm_npy = np.zeros(np.sum(count), dtype=np.float32)
@@ -145,7 +143,7 @@ for i in step:
         np.add.at(grad_norm_npy, input, 1)
         np.add.at(grad_norm_npy_window, input, 1)
         mask_ptr = ins(input_c, batch_size)
-    if (i % 30000 == 0 and i != 0):        
+    if (i % 25000 == 0 and i != 0):        
         hotn = int(np.sum(count) * 0.7 * 0.001 * (16 / 28))
         ind = np.argsort(-grad_norm_npy)[:hotn]
         ind = np.array(np.sort(ind), dtype=np.int32)
@@ -153,7 +151,7 @@ for i in step:
         ind_addr = ind.ctypes.data_as(ctypes.POINTER(ctypes.c_int))
         ind_c = ctypes.cast(ind_addr, ctypes.POINTER(ctypes.c_int))
         Recall = analyse(ind_c, hotn)
-        time_recall_1000.loc[i / 60000, "Up-to-date Topk"] = Recall
+        time_recall_1000.loc[i / 50000, "Up-to-date Topk"] = Recall
 
         ind = np.argsort(-grad_norm_npy_window)[:hotn]
         ind = np.array(np.sort(ind), dtype=np.int32)
@@ -161,12 +159,10 @@ for i in step:
         ind_addr = ind.ctypes.data_as(ctypes.POINTER(ctypes.c_int))
         ind_c = ctypes.cast(ind_addr, ctypes.POINTER(ctypes.c_int))
         Recall = analyse(ind_c, hotn)
-        time_recall_1000.loc[i / 60000, "Sliding-window Topk"] = Recall
+        time_recall_1000.loc[i / 50000, "Sliding-window Topk"] = Recall
         grad_norm_npy_window = np.zeros(np.sum(count), dtype=np.float32)
 
-time_recall_1000.to_csv("./excels/sketch/time_recall_1000.csv")
-
-
+time_recall_1000.to_csv(osp.join(cur_dir, "time_recall_1000.csv"))
 
 
 hotn = int(np.sum(count) * 0.3 * 0.01 * (16 / 28))
@@ -174,7 +170,7 @@ day = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6]
 time_recall_100 = pd.DataFrame(index=day, columns=["Sliding-window Topk", "Up-to-date Topk"])
 step = math.floor(len / batch_size)
 init(int(hotn), 50, hotn, 4)
-for i in step:
+for i in range(step):
     l = i * batch_size
     r = l + batch_size
     grad_norm_npy = np.zeros(np.sum(count), dtype=np.float32)
@@ -186,7 +182,7 @@ for i in step:
         np.add.at(grad_norm_npy, input, 1)
         np.add.at(grad_norm_npy_window, input, 1)
         mask_ptr = ins(input_c, batch_size)
-    if (i % 30000 == 0 and i != 0):        
+    if (i % 25000 == 0 and i != 0):        
         hotn = int(np.sum(count) * 0.3 * 0.01 * (16 / 28))
         ind = np.argsort(-grad_norm_npy)[:hotn]
         ind = np.array(np.sort(ind), dtype=np.int32)
@@ -194,7 +190,7 @@ for i in step:
         ind_addr = ind.ctypes.data_as(ctypes.POINTER(ctypes.c_int))
         ind_c = ctypes.cast(ind_addr, ctypes.POINTER(ctypes.c_int))
         Recall = analyse(ind_c, hotn)
-        time_recall_100.loc[i / 60000, "Up-to-date Topk"] = Recall
+        time_recall_100.loc[i / 50000, "Up-to-date Topk"] = Recall
 
         ind = np.argsort(-grad_norm_npy_window)[:hotn]
         ind = np.array(np.sort(ind), dtype=np.int32)
@@ -202,7 +198,7 @@ for i in step:
         ind_addr = ind.ctypes.data_as(ctypes.POINTER(ctypes.c_int))
         ind_c = ctypes.cast(ind_addr, ctypes.POINTER(ctypes.c_int))
         Recall = analyse(ind_c, hotn)
-        time_recall_100.loc[i / 60000, "Sliding-window Topk"] = Recall
+        time_recall_100.loc[i / 50000, "Sliding-window Topk"] = Recall
         grad_norm_npy_window = np.zeros(np.sum(count), dtype=np.float32)
 
-time_recall_100.to_csv("./excels/sketch/time_recall_100.csv")
+time_recall_100.to_csv(osp.join(cur_dir, "time_recall_100.csv"))

@@ -1,0 +1,36 @@
+{
+    "base": {
+        "embedding_dim": 128,
+        "dataset": "criteotb",
+        "max_ind_range": 40000000,
+        "learning_rate": 1.0,
+        "mini_batch_size": 2048,
+        "print_freq": 1024,
+        "test_freq": 2048,
+        "test_throughput": true,
+        "compress_rate": 0.1,
+        "data_path": "datasets/criteotb"
+    },
+    "hash": {
+        "compress_method": "hash",
+        "tensor_board_filename": "board/latency/hash"
+    },
+    "qr": {
+        "compress_method": "qr",
+        "tensor_board_filename": "board/latency/qr"
+    },
+    "ada": {
+        "compress_method": "ada",
+        "tensor_board_filename": "board/latency/ada"
+    },
+    "mde": {
+        "compress_method": "mde",
+        "tensor_board_filename": "board/latency/mde"
+    },
+    "cafe": {
+        "compress_method": "cafe",
+        "tensor_board_filename": "board/latency/cafe",
+        "cafe_sketch_threshold": 20,
+        "cafe_hash_rate": 0.5
+    }
+}

@@ -41,13 +41,19 @@ def inference(
     nbatches_test,
     writer,
     log_iter=-1,
+    test_throughput=False,
 ):
     test_accu = 0
     test_samp = 0
     scores = []
     targets = []
-    
+
+    if test_throughput:
+        nwarmup = 10
+
     for it, testBatch in enumerate(test_ld):
+        if test_throughput and it == nwarmup:
+            start = time.time()
         dense_test, offsets_test, indices_test, targets_test = testBatch
         if dense_test != None:
             dense_test = dense_test.to(device)
@@ -63,6 +69,16 @@ def inference(
 
         test_accu += A_test
         test_samp += mbs_test
+
+        if test_throughput and it == 1023:
+            ending = time.time()
+            time_usage = ending - start
+            return time_usage * 1000 / (1024 - nwarmup), None
+
+    if test_throughput:
+        ending = time.time()
+        time_usage = ending - start
+        return time_usage * 1000 / (len(test_ld) - nwarmup), None
 
     scores = np.concatenate(scores, axis=0)
     targets = np.concatenate(targets, axis=0)
@@ -163,6 +179,7 @@ def main():
     parser.add_argument("--print_wall_time", type=str2bool, default=False)
     parser.add_argument("--tensor_board_filename",
                         type=str, default="run_kaggle_pt")
+    parser.add_argument("--test_throughput", type=str2bool, default=False)
     # store/load model
     parser.add_argument("--save_model", type=str, default="")
     parser.add_argument("--load_model", type=str, default="")
@@ -187,6 +204,12 @@ def main():
     else:
         device = torch.device("cpu")
         print("Using CPU...")
+
+    # for testing throughput
+    if args.test_throughput:
+        args.print_freq = max(args.print_freq, 1024)
+        args.test_freq = 2 * args.print_freq
+        args.print_time = True
 
     # input data
     train_data, train_ld, test_data, test_ld = make_datasets_and_loaders(args)
@@ -320,19 +343,21 @@ def main():
         while ep < args.nepochs:
             if ep < skip_upto_epoch:
                 continue
-            t1 = 0
+            t1 = time.time()
             t2 = 0
             for it, batch in enumerate(train_ld):
 
                 if it < skip_upto_batch:
                     continue
-                dense, offsets, indices, targets = batch
+                should_print = ((it + 1) % args.print_freq == 0) or (
+                    it + 1 == nbatches
+                ) or (it <= 100)
+                should_test = (
+                    (args.test_freq > 0)
+                    and (((it + 1) % args.test_freq == 0) or (it + 1 == nbatches))
+                )
 
-                if args.print_time:
-                    t2 = t1
-                    if use_gpu:
-                        torch.cuda.synchronize()
-                    t1 = time.time()
+                dense, offsets, indices, targets = batch
 
                 mbs = targets.shape[0]
                 # forward pass
@@ -351,24 +376,22 @@ def main():
                 dlrm.embedding_layer.insert_grad(indices)
                 optimizer.step()
 
-                if args.print_time:
-                    total_time += t1 - t2
                 total_loss += loss_np * mbs
                 total_iter += 1
                 total_samp += mbs
 
-                should_print = ((it + 1) % args.print_freq == 0) or (
-                    it + 1 == nbatches
-                ) or (it <= 100)
-                should_test = (
-                    (args.test_freq > 0)
-                    and (((it + 1) % args.test_freq == 0) or (it + 1 == nbatches))
-                )
-
                 # print time, loss and accuracy
                 if should_print or should_test:
-                    gT = 1000.0 * total_time / total_iter if args.print_time else -1
-                    total_time = 0
+                    if args.print_time:
+                        t2 = t1
+                        if use_gpu:
+                            torch.cuda.synchronize()
+                        t1 = time.time()
+                        total_time += t1 - t2
+                        gT = 1000.0 * total_time / total_iter
+                        total_time = 0
+                    else:
+                        gT = -1
 
                     train_loss = total_loss / total_samp
                     total_loss = 0
@@ -394,6 +417,9 @@ def main():
                     total_iter = 0
                     total_samp = 0
 
+                    if args.test_throughput and (it + 1) == 2 * args.print_freq:
+                        should_test = True
+
                 # testing
                 if should_test:
                     print(f"Testing at - {it + 1}/{nbatches} of epoch {ep},")
@@ -409,7 +435,16 @@ def main():
                         nbatches_test,
                         writer,
                         log_iter,
+                        test_throughput=args.test_throughput
                     )
+                    if args.test_throughput:
+                        # now directly exit
+                        import pandas as pd
+                        lats = pd.DataFrame(columns=['train', 'test'], index=None)
+                        lats['train'] = [gT]
+                        lats['test'] = [model_metrics_dict]
+                        lats.to_csv(osp.join(tb_file, 'latency.csv'), index=False)
+                        exit(0)
 
                     if (
                         is_best

@@ -74,10 +74,8 @@ if __name__ == '__main__':
     bar(yvalues, results, 'Decay', (0.793, 0.796),
         'decay.png', 'white', 0.5, [0.793, 0.794, 0.795, 0.796])
 
-    # # # others in 1000 cr
-    # # # yvalues = ['CAFE', 'Field', 'w/o \nNorm', 'Freq'][::-1]
-    # # # results = [79.531, 76.547, 79.526, 79.504][::-1]
-    # # yvalues = ['CAFE', 'Field', 'Freq'][::-1]
-    # # results = div100([79.531, 76.547, 79.504][::-1])
-    # # bar(yvalues, results, 'Design', (0.76, 0.81), 'others.png',
-    # #     'white', 0.5, div100([76, 77, 78, 79, 80, 81]))
+    # others in 1000 cr
+    yvalues = ['Freq', 'Field', 'CAFE']
+    results = [get_auc_cr('sensitivity', 'freq'), get_auc_cr('sensitivity', 'field'), baseline]
+    bar(yvalues, results, 'Design', (0.76, 0.81), 'others.png',
+        'white', 0.5, [0.76, 0.77, 0.78, 0.79, 0.80, 0.81])
