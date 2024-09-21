@@ -124,6 +124,7 @@ extern "C" {
             return 0;
         }
         int* batch_query(uint32_t *data, int len) {
+            #pragma omp parallel for
             for (int i = 0; i < len; ++i) {
                 que[i] = query(data[i]);
             }
