@@ -12,6 +12,7 @@ from .qr_embedding_bag import QREmbeddingBag
 from .sk_embedding_bag import SKEmbeddingBag
 from .md_embedding_bag import PrEmbeddingBag, md_solver
 from .ada_embedding_bag import AdaEmbeddingBag
+from .off_embedding_bag import OffEmbeddingBag
 
 
 class EmbeddingLayer(nn.Module):
@@ -21,6 +22,7 @@ class EmbeddingLayer(nn.Module):
         embedding_dim,
         embedding_nums,
         device,
+        train_dataset=None,
     ):
         super(EmbeddingLayer, self).__init__()
         self.device = device
@@ -117,6 +119,10 @@ class EmbeddingLayer(nn.Module):
                 scale = np.sqrt(1 / max(embedding_nums))
                 nn.init.uniform_(self.weight_high, -scale, scale)
                 init(hotn, cafe_sketch_threshold, ctypes.c_double(cafe_decay), ctypes.c_int(0))
+        elif self.compress_method == 'off':
+            cafe_hash_rate = args.cafe_hash_rate
+            real_cafe_hash_rate = compress_rate * cafe_hash_rate
+            hot_dict = train_dataset.generate_hot_features(compress_threshold, compress_rate, cafe_hash_rate)
         N = 0
         for i in range(embedding_nums.size):
             n = embedding_nums[i]
@@ -178,6 +184,14 @@ class EmbeddingLayer(nn.Module):
                     EE = HashEmbeddingBag(n, embedding_dim, compress_rate, mode="sum", sparse=True)
                     nn.init.uniform_(EE.weight, -scale, scale)
                 N += 1
+            elif self.compress_method == 'off' and n > compress_threshold:
+                num_hot = (hot_dict[i] >= 0).sum()
+                num_cold = int(math.ceil(real_cafe_hash_rate * n)) - num_hot
+                EE = OffEmbeddingBag(num_hot, max(num_cold, 0), embedding_dim, hot_dict[i], device)
+                if num_hot > 0:
+                    nn.init.uniform_(EE.weight_hot.weight, -scale, scale)
+                if num_cold > 0:
+                    nn.init.uniform_(EE.weight_cold.weight, -scale, scale)
             elif self.compress_method == 'hash' and n > compress_threshold:
                 EE = HashEmbeddingBag(n, embedding_dim, compress_rate, mode="sum", sparse=True)
                 nn.init.uniform_(EE.weight, -scale, scale)

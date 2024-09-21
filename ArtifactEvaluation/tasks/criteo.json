@@ -51,5 +51,15 @@
         "cafe_hash_rate": [
             0.7, 0.5, 0.5, 0.5, 0.3, 0.3, 0.2, 0.2, 0.2, 0.1, 0.1, 0.1
         ]
+    },
+    "off": {
+        "compress_method": "off",
+        "tensor_board_filename": "board/criteo/off",
+        "compress_rate": [
+            0.1, 0.01, 0.001, 0.0001
+        ],
+        "cafe_hash_rate": [
+            0.5, 0.3, 0.2, 0.1
+        ]
     }
 }

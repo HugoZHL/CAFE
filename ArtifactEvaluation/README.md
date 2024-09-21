@@ -200,9 +200,9 @@ Then we have the following figures:
 | pngs/criteotb_auc_cr_fhmc.png | Fig. 12(b) |
 | pngs/criteo_loss_cr_fhmc.png | Fig. 12(c) |
 | pngs/criteotb_loss_cr_fhmc.png | Fig. 12(d) |
-| / | Fig. 14(a) |
-| / | Fig. 14(b) |
-| / | Fig. 14(c) |
+| pngs/criteo_auc_cr_foc.png | Fig. 14(a) |
+| pngs/criteo0.001_auc_iter_foc.png | Fig. 14(b) |
+| pngs/criteo0.001_loss_iter_foc.png | Fig. 14(c) |
 | / | Fig. 16(a) |
 | / | Fig. 16(b) |
 | pngs/criteotb13_auc_cr_hqac.png | Fig. 17(a) |

@@ -92,6 +92,11 @@ def plot_figure(dataset, metric, methods, crs):
         mask = ~np.isnan(data)
         plt.plot(xlabels[mask], data[mask], label='AdaEmbed', linestyle='-', marker='v', color='C2',
                 markersize=11.5, alpha=1, linewidth=2, markerfacecolor='none', markeredgewidth=2)
+    if 'off' in methods:
+        data = np.array([func(dataset, f'off{cr}') for cr in crs])
+        mask = ~np.isnan(data)
+        plt.plot(xlabels[mask], data[mask], label='Offline', linestyle='-', marker='^', color='C4',
+             markersize=11.5, alpha=1, linewidth=2, markerfacecolor='none', markeredgewidth=2)
     if 'cafe' in methods:
         data = np.array([func(dataset, f'cafe{cr}') for cr in crs])
         mask = ~np.isnan(data)
@@ -135,6 +140,9 @@ if __name__ == '__main__':
     plot_figure('criteo', 'loss', ['full', 'hash', 'mde', 'cafe'], [0.5, 0.2, 0.1])
     plot_figure('criteotb', 'auc', ['full', 'hash', 'mde', 'cafe'], [0.1, 0.05, 0.02])
     plot_figure('criteotb', 'loss', ['full', 'hash', 'mde', 'cafe'], [0.1, 0.05, 0.02])
+
+    # plot offline
+    plot_figure('criteo', 'auc', ['full', 'off', 'cafe'], [0.1, 0.01, 0.001, 0.0001])
 
     # plot criteotb-1/3
     plot_figure('criteotb13', 'auc', no_full_methods, [0.1, 0.05, 0.02])

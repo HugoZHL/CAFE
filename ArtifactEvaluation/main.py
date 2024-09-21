@@ -145,7 +145,7 @@ def main():
     parser.add_argument("--embedding_dim", type=int, required=True)
     # embedding table options
     parser.add_argument("--compress_method", type=str, default=None,
-                        choices=[None, 'hash', 'mde', 'qr', 'ada', 'cafe'])
+                        choices=[None, 'hash', 'mde', 'qr', 'ada', 'cafe', 'off'])
     parser.add_argument("--compress_rate", type=float, default=0.001)
     parser.add_argument("--max_ind_range", type=int, default=-1)
 
@@ -243,7 +243,7 @@ def main():
         ln_top = np.array([num_int, 512, 256, 1], dtype=int)
 
     # init embedding
-    embedding_layer = EmbeddingLayer(args, embedding_dim, embedding_nums, device)
+    embedding_layer = EmbeddingLayer(args, embedding_dim, embedding_nums, device, train_data)
 
     # init model
     model_cls = {

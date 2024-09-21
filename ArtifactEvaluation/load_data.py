@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import os.path as osp
 import torch
 from bisect import bisect_right
@@ -11,6 +12,7 @@ class CTRDataset:
         phase,
         max_ind_range=-1,
     ):
+        self.data_path = data_path
         self.sparse = self.read_sparse(data_path)
         self.dense = self.read_dense(data_path)
         self.label = self.read_label(data_path)
@@ -82,6 +84,66 @@ class CTRDataset:
 
     def __len__(self):
         return len(self.label)
+
+    def get_sorted_frequency(self):
+        freq_dir = osp.join(self.data_path, 'freq')
+        for i in range(self.num_sparse):
+            uni, cnt = np.unique(self.sparse[:, i], return_counts=True)
+            uni.astype(np.int32).tofile(osp.join(freq_dir, f'uni{i}.bin'))
+            cnt.astype(np.int32).tofile(osp.join(freq_dir, f'cnt{i}.bin'))
+
+    def generate_hot_features(self, threshold, compress_rate, cafe_hash_rate):
+        if isinstance(self, (CriteoTBDataset, CriteoTBOneThirdDataset)):
+            raise AssertionError("Not support CriteoTB datasets now.")
+        freq_dir = osp.join(self.data_path, 'freq')
+        os.makedirs(freq_dir, exist_ok=True)
+        try:
+            hot_dict = {}
+            for i in range(self.num_sparse):
+                if self.counts[i] > threshold:
+                    if not osp.exists(osp.join(freq_dir, f'hot_dict{i}.bin')):
+                        raise FileNotFoundError
+            for i in range(self.num_sparse):
+                if self.counts[i] > threshold:
+                    hot_dict[i] = np.fromfile(osp.join(freq_dir, f'hot_dict{i}.bin'), dtype=np.int32)
+        except FileNotFoundError:
+            uni_files = [osp.join(freq_dir, f'uni{i}.bin') for i in range(self.num_sparse)]
+            cnt_files = [osp.join(freq_dir, f'cnt{i}.bin') for i in range(self.num_sparse)]
+            if not all([osp.exists(f) for f in uni_files]) or not all([osp.exists(f) for f in cnt_files]):
+                self.get_sorted_frequency()
+            unis = [np.fromfile(f, dtype=np.int32) for f in uni_files]
+            cnts = [np.fromfile(f, dtype=np.int32) for f in cnt_files]
+            tot = 0
+            unique_values = []
+            counts = []
+            for i in range(self.num_sparse):
+                if self.counts[i] > threshold:
+                    uni, cnt = unis[i], cnts[i]
+                    uni += tot
+                    unique_values.extend(uni.tolist())
+                    counts.extend(cnt.tolist())
+                    tot += self.counts[i]
+
+            hot_nums = int(tot * compress_rate * (1.0 - cafe_hash_rate))
+            print(f"hot_nums: {hot_nums}")
+            idx = np.argsort(np.array(counts))[-hot_nums:]
+            unique_values = np.array(unique_values)[idx]
+            unique_values.sort()
+            lst = 0
+            hot_dict = {}
+            for i in range(self.num_sparse):
+                if self.counts[i] > threshold:
+                    cur_hot_dict = np.full(self.counts[i], -1, dtype=np.int32)
+                    tmp = 0
+                    while lst < hot_nums and unique_values[lst] < self.counts[i]:
+                        cur_hot_dict[unique_values[lst]] = tmp
+                        lst += 1
+                        tmp += 1
+                    unique_values -= self.counts[i]
+                    print(i, cur_hot_dict.shape, self.counts[i], (cur_hot_dict >= 0).sum())
+                    cur_hot_dict.tofile(osp.join(freq_dir, f'hot_dict{i}.bin'))
+                    hot_dict[i] = cur_hot_dict
+        return hot_dict
 
 
 class CriteoDataset(CTRDataset):

@@ -40,7 +40,7 @@ def load_tasks(config_file, flatten=['compress_rate', 'cafe_sketch_threshold', '
         config = json.load(file)
     base_args = config['base']
     tasks = []
-    methods = ['full', 'hash', 'qr', 'ada', 'mde', 'cafe']
+    methods = ['full', 'hash', 'qr', 'ada', 'mde', 'cafe', 'off']
     for met in methods:
         if met in config:
             new_task = base_args.copy()

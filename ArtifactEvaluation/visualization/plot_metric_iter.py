@@ -29,34 +29,13 @@ def plot_auc(dataset, cr, methods):
         data['step'] = stepdata[:-1]
         data['full'] = fulldata[:-1]
         nstep = len(data['step'])
-    # hash
-    if 'hash' in methods:
-        stepdata, hashdata = get_auc_data(dataset, f'hash{cr}')
-        if 'step' not in data:
-            data['step'] = stepdata[:-1]
-            nstep = len(data['step'])
-        data['hash'] = hashdata[:nstep]
-    # qr
-    if 'qr' in methods:
-        stepdata, qrdata = get_auc_data(dataset, f'qr{cr}')
-        if 'step' not in data:
-            data['step'] = stepdata[:-1]
-            nstep = len(data['step'])
-        data['qr'] = qrdata[:nstep]
-    # ada
-    if 'ada' in methods:
-        stepdata, cafedata = get_auc_data(dataset, f'ada{cr}')
-        if 'step' not in data:
-            data['step'] = stepdata[:-1]
-            nstep = len(data['step'])
-        data['ada'] = cafedata[:nstep]
-    # cafe
-    if 'cafe' in methods:
-        stepdata, cafedata = get_auc_data(dataset, f'cafe{cr}')
-        if 'step' not in data:
-            data['step'] = stepdata[:-1]
-            nstep = len(data['step'])
-        data['cafe'] = cafedata[:nstep]
+    for met in ['hash', 'qr', 'ada', 'off', 'cafe']:
+        if met in methods:
+            stepdata, cur_data = get_auc_data(dataset, f'{met}{cr}')
+            if 'step' not in data:
+                data['step'] = stepdata[:-1]
+                nstep = len(data['step'])
+            data[met] = cur_data[:nstep]
 
     plt.rc('font', family='Arial')
     plt.figure(figsize=(6, 4.5))
@@ -78,6 +57,9 @@ def plot_auc(dataset, cr, methods):
                 markersize=10, alpha=1, linewidth=2, markerfacecolor='none', markeredgewidth=2)
     if 'ada' in methods:
         plt.plot(data['step'], data['ada'], label='AdaEmbed', linestyle='-', marker='v', color='C2',
+                markersize=11.5, alpha=1, linewidth=2, markerfacecolor='none', markeredgewidth=2)
+    if 'off' in methods:
+        plt.plot(data['step'], data['off'], label='Offline', linestyle='-', marker='^', color='C4',
                 markersize=11.5, alpha=1, linewidth=2, markerfacecolor='none', markeredgewidth=2)
     if 'cafe' in methods:
         plt.plot(data['step'], data['cafe'], label='CAFE (ours)', linestyle='-', marker='o', color='C3',
@@ -107,34 +89,13 @@ def plot_loss(dataset, cr, methods):
         data['step'] = stepdata
         data['full'] = fulldata
         nstep = len(stepdata)
-    # hash
-    if 'hash' in methods:
-        stepdata, hashdata = get_loss_data(dataset, f'hash{cr}')
-        if 'step' not in data:
-            data['step'] = stepdata
-            nstep = len(stepdata)
-        data['hash'] = hashdata[:nstep]
-    # qr
-    if 'qr' in methods:
-        stepdata, qrdata = get_loss_data(dataset, f'qr{cr}')
-        if 'step' not in data:
-            data['step'] = stepdata
-            nstep = len(stepdata)
-        data['qr'] = qrdata[:nstep]
-    # ada
-    if 'ada' in methods:
-        stepdata, cafedata = get_loss_data(dataset, f'ada{cr}')
-        if 'step' not in data:
-            data['step'] = stepdata
-            nstep = len(stepdata)
-        data['ada'] = cafedata[:nstep]
-    # cafe
-    if 'cafe' in methods:
-        stepdata, cafedata = get_loss_data(dataset, f'cafe{cr}')
-        if 'step' not in data:
-            data['step'] = stepdata
-            nstep = len(stepdata)
-        data['cafe'] = cafedata[:nstep]
+    for met in ['hash', 'qr', 'ada', 'off', 'cafe']:
+        if met in methods:
+            stepdata, cur_data = get_loss_data(dataset, f'{met}{cr}')
+            if 'step' not in data:
+                data['step'] = stepdata
+                nstep = len(stepdata)
+            data[met] = cur_data[:nstep]
     for ind, s in enumerate(data['step']):
         if s >= 1024:
             # remove early too high losses to improve visualization
@@ -168,6 +129,9 @@ def plot_loss(dataset, cr, methods):
                 alpha=1, linewidth=1)
     if 'ada' in methods:
         plt.plot(data['step'], data['ada'], label='AdaEmbed', linestyle='-', marker=None, color='C2',
+                alpha=1, linewidth=1)
+    if 'off' in methods:
+        plt.plot(data['step'], data['off'], label='Offline', linestyle='-', marker=None, color='C4',
                 alpha=1, linewidth=1)
     if 'cafe' in methods:
         plt.plot(data['step'], data['cafe'], label='CAFE (ours)', linestyle='-', marker=None, color='C3',
@@ -203,6 +167,10 @@ if __name__ == '__main__':
     plot_loss('criteotb', 0.01, methods=['hash', 'qr', 'cafe'])
     plot_auc('criteotb', 0.02, methods=['ada', 'cafe'])
     plot_loss('criteotb', 0.02, methods=['ada', 'cafe'])
+
+    # offline
+    plot_auc('criteo', 0.001, methods=['full', 'off', 'cafe'])
+    plot_loss('criteo', 0.001, methods=['full', 'off', 'cafe'])
 
     # criteotb-1/3
     plot_loss('criteotb13', 0.02, methods=['hash', 'qr', 'ada', 'cafe'])
