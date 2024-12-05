@@ -258,7 +258,7 @@ class DLRM_Net(nn.Module):
         N = 0
         if self.ada_flag:
             for i in range(0, ln.size):
-                if ln[i] > 2000 * self.compress_rate:
+                if ln[i] > 200:
                     N += ln[i]
             self.dic = np.zeros(N, dtype=np.int32)
             self.hotn = int((N * m * self.compress_rate - N * 2) / m)
@@ -1123,7 +1123,7 @@ def run():
     parser.add_argument("--count-path", type=str,
                         default="../criteo_24days/processed_count.bin")
 
-    parser.add_argument("--sketch-threshold", type=int, default=500)
+    parser.add_argument("--sketch-threshold", type=int, default=1)
     parser.add_argument("--adjust-threshold", type=int, default=1)
     parser.add_argument("--sketch-alpha", type=float, default=1.0)
 
