@@ -203,8 +203,6 @@ Then we have the following figures:
 | pngs/criteo_auc_cr_foc.png | Fig. 14(a) |
 | pngs/criteo0.001_auc_iter_foc.png | Fig. 14(b) |
 | pngs/criteo0.001_loss_iter_foc.png | Fig. 14(c) |
-| / | Fig. 16(a) |
-| / | Fig. 16(b) |
 | pngs/criteotb13_auc_cr_hqac.png | Fig. 17(a) |
 | pngs/criteotb13_loss_cr_hqac.png | Fig. 17(b) |
 | pngs/criteotb130.02_loss_iter_hqac.png | Fig. 17(c) |

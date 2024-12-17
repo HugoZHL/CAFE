@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import os.path as osp
-from board_reader import get_auc_cr, get_loss_cr
+from board_reader import get_auc_cr, get_loss_cr, check_dataset
 
 work_dir = osp.split(osp.split(osp.abspath(__file__))[0])[0]
 png_dir = osp.join(work_dir, 'pngs')
@@ -13,6 +13,8 @@ os.makedirs(png_dir, exist_ok=True)
 
 
 def plot_figure(dataset, metric, methods, crs):
+    if not check_dataset(dataset):
+        return
     if metric not in ['loss', 'auc']:
         raise AssertionError(f'Metric {metric} not supported.')
     isauc = metric == 'auc'

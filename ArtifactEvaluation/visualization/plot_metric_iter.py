@@ -4,7 +4,7 @@
 import matplotlib.pyplot as plt
 import os
 import os.path as osp
-from board_reader import get_auc_iter, get_loss_iter
+from board_reader import get_auc_iter, get_loss_iter, check_dataset
 
 work_dir = osp.split(osp.split(osp.abspath(__file__))[0])[0]
 png_dir = osp.join(work_dir, 'pngs')
@@ -22,6 +22,8 @@ def get_auc_data(dataset, task_name):
 
 
 def plot_auc(dataset, cr, methods):
+    if not check_dataset(dataset):
+        return
     data = {}
     # full; we don't run full criteotb, since it's too large
     if 'full' in methods:
@@ -82,6 +84,8 @@ def plot_auc(dataset, cr, methods):
 
 
 def plot_loss(dataset, cr, methods):
+    if not check_dataset(dataset):
+        return
     data = {}
     # full; we don't run full criteotb, since it's too large
     if 'full' in methods:

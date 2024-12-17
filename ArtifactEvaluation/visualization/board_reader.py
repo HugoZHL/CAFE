@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from tensorboard.backend.event_processing import event_accumulator
 import os.path as osp
+import warnings
 
 board_dir = osp.join(osp.split(osp.split(osp.abspath(__file__))[0])[0], 'board')
 
@@ -76,3 +77,10 @@ def get_auc_iter(dataset, task_name):
         load_from_board(log_dir)
     aucs = pd.read_csv(csv_file)
     return aucs
+
+
+def check_dataset(dataset):
+    result = osp.exists(osp.join(board_dir, dataset))
+    if not result:
+        warnings.warn(f'No running data found in {dataset}! Skipping the figures.')
+    return result
